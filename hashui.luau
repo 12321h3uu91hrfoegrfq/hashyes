@@ -11,6 +11,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local TextService = game:GetService("TextService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -248,10 +249,9 @@ function HashUI:Intro(version, displayName, holdTime)
         Parent = titleRow,
     })
 
-    RunService.RenderStepped:Wait()
     local gap = 12
-    local titleWidth = math.ceil(titleText.TextBounds.X)
-    local versionWidth = math.ceil(versionText.TextBounds.X)
+    local titleWidth = math.ceil(TextService:GetTextSize(titleText.Text, titleText.TextSize, titleText.Font, Vector2.new(1000, 42)).X)
+    local versionWidth = math.ceil(TextService:GetTextSize(versionText.Text, versionText.TextSize, versionText.Font, Vector2.new(1000, 42)).X)
     local totalWidth = titleWidth + gap + versionWidth
     titleRow.Size = UDim2.fromOffset(totalWidth, 42)
     titleText.Size = UDim2.fromOffset(titleWidth, 42)
@@ -518,7 +518,9 @@ function HashUI:Window(title, accent, toggleKey)
 
     function window:SelectTab(nameOrIndex)
         local selected
-        if typeof(nameOrIndex) == "number" then
+        if type(nameOrIndex) == "table" then
+            selected = nameOrIndex
+        elseif type(nameOrIndex) == "number" then
             selected = self.Tabs[nameOrIndex]
         else
             for _, tab in ipairs(self.Tabs) do
@@ -534,6 +536,12 @@ function HashUI:Window(title, accent, toggleKey)
             local active = tab == selected
             tab.Page.Visible = active
             tab.Page.Active = active
+            tab.Page.ZIndex = active and 20 or 4
+            tab.Page.LayoutOrder = active and 1 or 2
+            if active then
+                tab.Page.CanvasPosition = Vector2.new(0, 0)
+                tab.Page.Parent = pages
+            end
             tab.Button.BackgroundColor3 = active and THEME.PanelAlt or Color3.fromRGB(22, 22, 24)
             tab.Button.TextColor3 = active and THEME.Text or THEME.Muted
             tab.Accent.BackgroundTransparency = active and 0 or 1
@@ -610,7 +618,7 @@ function HashUI:Window(title, accent, toggleKey)
         tab.List = list
 
         tabButton.MouseButton1Click:Connect(function()
-            self:SelectTab(tab.Name)
+            self:SelectTab(tab)
         end)
 
         connectHover(tabButton, {
@@ -1138,12 +1146,8 @@ function HashUI:Window(title, accent, toggleKey)
         end
 
         table.insert(self.Tabs, tab)
-        if not self.CurrentTab then
-            task.defer(function()
-                if self.Gui and self.Gui.Parent and not self.CurrentTab then
-                    self:SelectTab(tab.Name)
-                end
-            end)
+        if #self.Tabs == 1 then
+            self:SelectTab(tab)
         end
 
         return tab
