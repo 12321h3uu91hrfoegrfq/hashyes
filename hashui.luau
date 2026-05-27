@@ -74,6 +74,28 @@ local function tween(obj, time, props, style, direction)
     return tw
 end
 
+local function tableClear(t)
+    if table.clear then
+        table.clear(t)
+        return
+    end
+    for k in pairs(t) do
+        t[k] = nil
+    end
+end
+
+local function tableFind(t, value)
+    if table.find then
+        return table.find(t, value)
+    end
+    for i, item in ipairs(t) do
+        if item == value then
+            return i
+        end
+    end
+    return nil
+end
+
 local function getGuiParent()
     if gethui then
         local ok, result = pcall(gethui)
@@ -126,6 +148,7 @@ local function makeText(parent, text, size, color, font)
         TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Center,
         TextTruncate = Enum.TextTruncate.AtEnd,
+        ZIndex = 6,
         Parent = parent,
     })
 end
@@ -139,6 +162,7 @@ local function makeIcon(parent, text)
         TextColor3 = THEME.Text,
         TextSize = 17,
         TextXAlignment = Enum.TextXAlignment.Center,
+        ZIndex = 7,
         Parent = parent,
     })
 end
@@ -153,6 +177,7 @@ local function makeButtonBase(parent, height)
         Text = "",
         TextColor3 = THEME.Text,
         TextSize = 14,
+        ZIndex = 5,
         Parent = parent,
     }, {
         corner(6),
@@ -398,7 +423,8 @@ function HashUI:Window(title, accent, toggleKey)
     local pages = make("Frame", {
         BackgroundTransparency = 1,
         Size = UDim2.fromScale(1, 1),
-        ZIndex = 2,
+        ClipsDescendants = true,
+        ZIndex = 3,
         Parent = content,
     })
 
@@ -480,6 +506,7 @@ function HashUI:Window(title, accent, toggleKey)
         for _, tab in ipairs(self.Tabs) do
             local active = tab == selected
             tab.Page.Visible = active
+            tab.Page.Active = active
             tab.Button.BackgroundColor3 = active and THEME.PanelAlt or Color3.fromRGB(22, 22, 24)
             tab.Button.TextColor3 = active and THEME.Text or THEME.Muted
             tab.Accent.BackgroundTransparency = active and 0 or 1
@@ -536,7 +563,7 @@ function HashUI:Window(title, accent, toggleKey)
             ScrollBarThickness = 3,
             Size = UDim2.fromScale(1, 1),
             Visible = false,
-            ZIndex = 2,
+            ZIndex = 4,
             Parent = pages,
         }, {
             padding(2, 8, 2, 8),
@@ -584,6 +611,7 @@ function HashUI:Window(title, accent, toggleKey)
                 TextColor3 = THEME.Text,
                 TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 6,
                 Parent = btn,
             })
             local icon = makeIcon(btn, ">")
@@ -608,6 +636,7 @@ function HashUI:Window(title, accent, toggleKey)
                 TextColor3 = THEME.Text,
                 TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 6,
                 Parent = btn,
             })
 
@@ -617,6 +646,7 @@ function HashUI:Window(title, accent, toggleKey)
                 BorderSizePixel = 0,
                 Position = UDim2.new(1, -12, 0.5, 0),
                 Size = UDim2.fromOffset(40, 20),
+                ZIndex = 6,
                 Parent = btn,
             }, {
                 corner(10),
@@ -627,6 +657,7 @@ function HashUI:Window(title, accent, toggleKey)
                 BorderSizePixel = 0,
                 Position = state and UDim2.fromOffset(22, 3) or UDim2.fromOffset(3, 3),
                 Size = UDim2.fromOffset(14, 14),
+                ZIndex = 7,
                 Parent = pill,
             }, {
                 corner(7),
@@ -666,6 +697,7 @@ function HashUI:Window(title, accent, toggleKey)
                 BackgroundColor3 = THEME.PanelAlt,
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 64),
+                ZIndex = 5,
                 Parent = self.Page,
             }, {
                 corner(6),
@@ -681,6 +713,7 @@ function HashUI:Window(title, accent, toggleKey)
                 TextColor3 = THEME.Text,
                 TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 6,
                 Parent = holder,
             })
 
@@ -694,6 +727,7 @@ function HashUI:Window(title, accent, toggleKey)
                 TextColor3 = THEME.Accent,
                 TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Right,
+                ZIndex = 6,
                 Parent = holder,
             })
 
@@ -702,6 +736,7 @@ function HashUI:Window(title, accent, toggleKey)
                 BorderSizePixel = 0,
                 Position = UDim2.fromOffset(0, 36),
                 Size = UDim2.new(1, 0, 0, 6),
+                ZIndex = 6,
                 Parent = holder,
             }, {
                 corner(3),
@@ -711,6 +746,7 @@ function HashUI:Window(title, accent, toggleKey)
                 BackgroundColor3 = THEME.Accent,
                 BorderSizePixel = 0,
                 Size = UDim2.new(0, 0, 1, 0),
+                ZIndex = 7,
                 Parent = bar,
             }, {
                 corner(3),
@@ -722,6 +758,7 @@ function HashUI:Window(title, accent, toggleKey)
                 Size = UDim2.new(1, 0, 0, 28),
                 Position = UDim2.fromOffset(0, 26),
                 Text = "",
+                ZIndex = 8,
                 Parent = holder,
             })
 
@@ -783,6 +820,7 @@ function HashUI:Window(title, accent, toggleKey)
                 BackgroundColor3 = THEME.PanelAlt,
                 BorderSizePixel = 0,
                 Size = UDim2.new(1, 0, 0, 46),
+                ZIndex = 5,
                 Parent = self.Page,
             }, {
                 corner(6),
@@ -798,6 +836,7 @@ function HashUI:Window(title, accent, toggleKey)
                 TextColor3 = THEME.Text,
                 TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 6,
                 Parent = holder,
             })
 
@@ -815,6 +854,7 @@ function HashUI:Window(title, accent, toggleKey)
                 TextColor3 = THEME.Text,
                 TextSize = 13,
                 TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 6,
                 Parent = holder,
             }, {
                 corner(5),
@@ -845,6 +885,7 @@ function HashUI:Window(title, accent, toggleKey)
                 BorderSizePixel = 0,
                 ClipsDescendants = true,
                 Size = UDim2.new(1, 0, 0, 46),
+                ZIndex = 5,
                 Parent = self.Page,
             }, {
                 corner(6),
@@ -856,6 +897,7 @@ function HashUI:Window(title, accent, toggleKey)
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 0, 46),
                 Text = "",
+                ZIndex = 6,
                 Parent = holder,
             })
 
@@ -868,6 +910,7 @@ function HashUI:Window(title, accent, toggleKey)
                 TextColor3 = THEME.Text,
                 TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 7,
                 Parent = header,
             })
 
@@ -882,6 +925,7 @@ function HashUI:Window(title, accent, toggleKey)
                 TextSize = 13,
                 TextTruncate = Enum.TextTruncate.AtEnd,
                 TextXAlignment = Enum.TextXAlignment.Right,
+                ZIndex = 7,
                 Parent = header,
             })
 
@@ -894,6 +938,7 @@ function HashUI:Window(title, accent, toggleKey)
                 Text = "v",
                 TextColor3 = THEME.Muted,
                 TextSize = 14,
+                ZIndex = 7,
                 Parent = header,
             })
 
@@ -906,6 +951,7 @@ function HashUI:Window(title, accent, toggleKey)
                 CanvasSize = UDim2.new(0, 0, 0, 0),
                 ScrollBarImageColor3 = THEME.Accent,
                 ScrollBarThickness = 3,
+                ZIndex = 7,
                 Parent = holder,
             })
 
@@ -929,7 +975,7 @@ function HashUI:Window(title, accent, toggleKey)
 
             local function buildOptions()
                 for _, obj in ipairs(optionButtons) do obj:Destroy() end
-                table.clear(optionButtons)
+                tableClear(optionButtons)
 
                 for _, value in ipairs(values) do
                     local opt = make("TextButton", {
@@ -942,6 +988,7 @@ function HashUI:Window(title, accent, toggleKey)
                         TextColor3 = value == selected and THEME.Text or THEME.Muted,
                         TextSize = 13,
                         TextTruncate = Enum.TextTruncate.AtEnd,
+                        ZIndex = 8,
                         Parent = listFrame,
                     }, {
                         corner(5),
@@ -973,9 +1020,9 @@ function HashUI:Window(title, accent, toggleKey)
             local api = {}
 
             function api:Refresh(newOptions)
-                table.clear(values)
+                tableClear(values)
                 for _, item in ipairs(newOptions or {}) do table.insert(values, tostring(item)) end
-                if not table.find(values, selected) then
+                if not tableFind(values, selected) then
                     selected = values[1] or ""
                     chosen.Text = selected
                 end
@@ -1014,6 +1061,7 @@ function HashUI:Window(title, accent, toggleKey)
                 TextColor3 = THEME.Text,
                 TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Left,
+                ZIndex = 6,
                 Parent = holder,
             })
 
@@ -1027,6 +1075,7 @@ function HashUI:Window(title, accent, toggleKey)
                 Text = currentKey.Name,
                 TextColor3 = THEME.Accent,
                 TextSize = 13,
+                ZIndex = 6,
                 Parent = holder,
             }, {
                 corner(5),
@@ -1064,7 +1113,11 @@ function HashUI:Window(title, accent, toggleKey)
 
         table.insert(self.Tabs, tab)
         if not self.CurrentTab then
-            self:SelectTab(tab.Name)
+            task.defer(function()
+                if self.Gui and self.Gui.Parent and not self.CurrentTab then
+                    self:SelectTab(tab.Name)
+                end
+            end)
         end
 
         return tab
