@@ -215,23 +215,48 @@ function HashUI:Intro(version, displayName, holdTime)
     })
 
     local titleRow = make("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0),
         BackgroundTransparency = 1,
+        Position = UDim2.new(0.5, 0, 0, 0),
         Size = UDim2.new(1, 0, 0, 42),
         Parent = holder,
     })
 
-    local title = make("TextLabel", {
+    local titleText = make("TextLabel", {
         BackgroundTransparency = 1,
         Font = Enum.Font.Gotham,
-        RichText = true,
-        Size = UDim2.new(1, 0, 1, 0),
-        Text = 'hash hub <font color="rgb(138,101,212)">[' .. tostring(version or "2.6.3") .. "]</font>",
+        Position = UDim2.fromOffset(0, 0),
+        Size = UDim2.fromOffset(0, 42),
+        Text = "hash hub",
         TextColor3 = THEME.Text,
         TextSize = 30,
         TextTransparency = 1,
-        TextXAlignment = Enum.TextXAlignment.Center,
+        TextXAlignment = Enum.TextXAlignment.Left,
         Parent = titleRow,
     })
+
+    local versionText = make("TextLabel", {
+        BackgroundTransparency = 1,
+        Font = Enum.Font.Gotham,
+        Position = UDim2.fromOffset(0, 0),
+        Size = UDim2.fromOffset(0, 42),
+        Text = "[" .. tostring(version or "2.6.3") .. "]",
+        TextColor3 = THEME.Accent,
+        TextSize = 30,
+        TextTransparency = 1,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = titleRow,
+    })
+
+    RunService.RenderStepped:Wait()
+    local gap = 12
+    local titleWidth = math.ceil(titleText.TextBounds.X)
+    local versionWidth = math.ceil(versionText.TextBounds.X)
+    local totalWidth = titleWidth + gap + versionWidth
+    titleRow.Size = UDim2.fromOffset(totalWidth, 42)
+    titleText.Size = UDim2.fromOffset(titleWidth, 42)
+    versionText.Position = UDim2.fromOffset(titleWidth + gap, 0)
+    versionText.Size = UDim2.fromOffset(versionWidth, 42)
 
     local line = make("Frame", {
         AnchorPoint = Vector2.new(0.5, 0),
@@ -259,14 +284,16 @@ function HashUI:Intro(version, displayName, holdTime)
 
     tween(bg, 0.35, { BackgroundTransparency = 0 })
     task.wait(0.12)
-    tween(title, 0.35, { TextTransparency = 0 })
+    tween(titleText, 0.35, { TextTransparency = 0 })
+    tween(versionText, 0.35, { TextTransparency = 0 })
     tween(line, 0.45, { BackgroundTransparency = 0, Size = UDim2.fromOffset(226, 1) })
     task.wait(0.1)
     tween(subtitle, 0.35, { TextTransparency = 0 })
 
     task.wait(holdTime or 2.2)
 
-    tween(title, 0.25, { TextTransparency = 1 })
+    tween(titleText, 0.25, { TextTransparency = 1 })
+    tween(versionText, 0.25, { TextTransparency = 1 })
     tween(subtitle, 0.25, { TextTransparency = 1 })
     tween(line, 0.25, { BackgroundTransparency = 1, Size = UDim2.fromOffset(0, 1) })
     task.wait(0.12)
@@ -675,7 +702,6 @@ function HashUI:Window(title, accent, toggleKey)
             end)
 
             apply(false)
-            if callback then task.spawn(callback, state) end
 
             return {
                 Set = function(_, value)
