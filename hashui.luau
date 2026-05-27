@@ -36,8 +36,10 @@ local function make(className, props, children)
     for k, v in pairs(props or {}) do
         obj[k] = v
     end
-    for _, child in ipairs(children or {}) do
-        child.Parent = obj
+    if children then
+        for _, child in ipairs(children) do
+            child.Parent = obj
+        end
     end
     return obj
 end
@@ -534,17 +536,17 @@ function HashUI:Window(title, accent, toggleKey)
 
         for _, tab in ipairs(self.Tabs) do
             local active = tab == selected
-            tab.Page.Visible = active
-            tab.Page.Active = active
-            tab.Page.ZIndex = active and 20 or 4
-            tab.Page.LayoutOrder = active and 1 or 2
+            tab.PageObject.Visible = active
+            tab.PageObject.Active = active
+            tab.PageObject.ZIndex = active and 20 or 4
+            tab.PageObject.LayoutOrder = active and 1 or 2
             if active then
-                tab.Page.CanvasPosition = Vector2.new(0, 0)
-                tab.Page.Parent = pages
+                tab.PageObject.CanvasPosition = Vector2.new(0, 0)
+                tab.PageObject.Parent = pages
             end
-            tab.Button.BackgroundColor3 = active and THEME.PanelAlt or Color3.fromRGB(22, 22, 24)
-            tab.Button.TextColor3 = active and THEME.Text or THEME.Muted
-            tab.Accent.BackgroundTransparency = active and 0 or 1
+            tab.TabButton.BackgroundColor3 = active and THEME.PanelAlt or Color3.fromRGB(22, 22, 24)
+            tab.TabButton.TextColor3 = active and THEME.Text or THEME.Muted
+            tab.TabAccent.BackgroundTransparency = active and 0 or 1
         end
         self.CurrentTab = selected
     end
@@ -612,10 +614,10 @@ function HashUI:Window(title, accent, toggleKey)
         })
         autoCanvas(scroller, list, 18)
 
-        tab.Button = tabButton
-        tab.Accent = tabAccent
-        tab.Page = scroller
-        tab.List = list
+        tab.TabButton = tabButton
+        tab.TabAccent = tabAccent
+        tab.PageObject = scroller
+        tab.ListObject = list
 
         tabButton.MouseButton1Click:Connect(function()
             self:SelectTab(tab)
