@@ -1204,6 +1204,9 @@ function bungiesLibrary.Load(SelectedLibrary)
                         }
 
                         local selectedValue = tostring(Configuration_Dropdown.Default)
+                        local dropdownIsOpen = false
+                        local optionButtons = {}
+
                         local holder_dropdown = Instance.new("Frame")
                         local label_dropdown = Instance.new("TextLabel")
                         local design_dropdown = Instance.new("Frame")
@@ -1215,13 +1218,14 @@ function bungiesLibrary.Load(SelectedLibrary)
                         local dropdown_container = Instance.new("Frame")
                         local dropdown_container_corner = Instance.new("UICorner")
                         local layout_dropdown_container = Instance.new("UIListLayout")
+                        local padding_dropdown_container = Instance.new("UIPadding")
 
                         holder_dropdown.Name = "holder_dropdown"
                         holder_dropdown.Parent = section
                         holder_dropdown.BackgroundTransparency = 1
                         holder_dropdown.Size = UDim2.new(0, 221, 0, 48)
                         holder_dropdown.ClipsDescendants = false
-                        holder_dropdown.ZIndex = 20
+                        holder_dropdown.ZIndex = 100
 
                         label_dropdown.Name = "label_dropdown"
                         label_dropdown.Parent = holder_dropdown
@@ -1234,6 +1238,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                         label_dropdown.TextSize = 12
                         label_dropdown.TextStrokeTransparency = 1
                         label_dropdown.TextXAlignment = Enum.TextXAlignment.Left
+                        label_dropdown.ZIndex = 101
 
                         design_dropdown.Name = "design_dropdown"
                         design_dropdown.Parent = holder_dropdown
@@ -1242,7 +1247,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                         design_dropdown.ClipsDescendants = true
                         design_dropdown.Position = UDim2.new(0, 0, 0, 19)
                         design_dropdown.Size = UDim2.new(0, 221, 0, 27)
-                        design_dropdown.ZIndex = 21
+                        design_dropdown.ZIndex = 102
 
                         dropdown_corner.CornerRadius = UDim.new(0, 6)
                         dropdown_corner.Parent = design_dropdown
@@ -1258,7 +1263,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                         button_dropdown.Size = UDim2.new(1, 0, 0, 27)
                         button_dropdown.AutoButtonColor = false
                         button_dropdown.Text = ""
-                        button_dropdown.ZIndex = 22
+                        button_dropdown.ZIndex = 110
 
                         button_dropdown_text.Name = "button_dropdown_text"
                         button_dropdown_text.Parent = button_dropdown
@@ -1271,7 +1276,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                         button_dropdown_text.TextSize = 12
                         button_dropdown_text.TextXAlignment = Enum.TextXAlignment.Left
                         button_dropdown_text.TextTruncate = Enum.TextTruncate.AtEnd
-                        button_dropdown_text.ZIndex = 23
+                        button_dropdown_text.ZIndex = 111
 
                         button_dropdown_arrow.Name = "button_dropdown_arrow"
                         button_dropdown_arrow.Parent = button_dropdown
@@ -1282,36 +1287,61 @@ function bungiesLibrary.Load(SelectedLibrary)
                         button_dropdown_arrow.Text = "⌄"
                         button_dropdown_arrow.TextColor3 = Color3.fromRGB(165, 165, 175)
                         button_dropdown_arrow.TextSize = 14
-                        button_dropdown_arrow.ZIndex = 23
+                        button_dropdown_arrow.ZIndex = 111
 
                         dropdown_container.Name = "dropdown_container"
                         dropdown_container.Parent = design_dropdown
                         dropdown_container.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
                         dropdown_container.BorderSizePixel = 0
-                        dropdown_container.Position = UDim2.new(0, 5, 0, 31)
+                        dropdown_container.Position = UDim2.new(0, 5, 0, 32)
                         dropdown_container.Size = UDim2.new(1, -10, 0, 0)
-                        dropdown_container.ZIndex = 24
+                        dropdown_container.ClipsDescendants = true
+                        dropdown_container.ZIndex = 120
 
                         dropdown_container_corner.CornerRadius = UDim.new(0, 5)
                         dropdown_container_corner.Parent = dropdown_container
 
+                        padding_dropdown_container.Parent = dropdown_container
+                        padding_dropdown_container.PaddingTop = UDim.new(0, 4)
+                        padding_dropdown_container.PaddingBottom = UDim.new(0, 4)
+                        padding_dropdown_container.PaddingLeft = UDim.new(0, 4)
+                        padding_dropdown_container.PaddingRight = UDim.new(0, 4)
+
                         layout_dropdown_container.Name = "layout_dropdown_container"
                         layout_dropdown_container.Parent = dropdown_container
                         layout_dropdown_container.SortOrder = Enum.SortOrder.LayoutOrder
-                        layout_dropdown_container.Padding = UDim.new(0, 3)
+                        layout_dropdown_container.Padding = UDim.new(0, 4)
 
-                        local dropdownIsOpen = false
-                        local optionButtons = {}
+                        local function getOptionsHeight()
+                            local count = 0
+                            for _ in pairs(optionButtons) do
+                                count += 1
+                            end
+
+                            if count <= 0 then
+                                return 0
+                            end
+
+                            return math.min(layout_dropdown_container.AbsoluteContentSize.Y + 10, 180)
+                        end
 
                         local function refreshHolderSize()
-                            local optionHeight = dropdownIsOpen and (layout_dropdown_container.AbsoluteContentSize.Y + 8) or 0
-                            local totalHeight = dropdownIsOpen and (50 + optionHeight) or 48
+                            local optionHeight = dropdownIsOpen and getOptionsHeight() or 0
+                            local totalHeight = dropdownIsOpen and (58 + optionHeight) or 48
+
                             holder_dropdown.Size = UDim2.new(0, 221, 0, totalHeight)
-                            design_dropdown.Size = UDim2.new(0, 221, 0, dropdownIsOpen and (31 + optionHeight) or 27)
                             dropdown_container.Size = UDim2.new(1, -10, 0, optionHeight)
+
+                            TweenService:Create(
+                                design_dropdown,
+                                TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                                {Size = UDim2.new(0, 221, 0, dropdownIsOpen and (36 + optionHeight) or 27)}
+                            ):Play()
+
                             button_dropdown_arrow.Text = dropdownIsOpen and "⌃" or "⌄"
-                            updateSection()
-                            updateSize()
+
+                            pcall(updateSection)
+                            pcall(updateSize)
                         end
 
                         local function clearSelectedColors()
@@ -1332,14 +1362,17 @@ function bungiesLibrary.Load(SelectedLibrary)
                             selectedValue = tostring(option)
                             button_dropdown_text.Text = selectedValue
                             clearSelectedColors()
+
                             local data = optionButtons[selectedValue]
                             if data then
                                 data.Label.TextColor3 = Color3.fromRGB(190, 160, 255)
                                 data.Bar.BackgroundTransparency = 0
                                 data.Button.BackgroundColor3 = Color3.fromRGB(31, 29, 39)
                             end
+
                             dropdownIsOpen = false
                             refreshHolderSize()
+
                             if fireCallback then
                                 pcall(Configuration_Dropdown.Script, selectedValue)
                             end
@@ -1358,11 +1391,10 @@ function bungiesLibrary.Load(SelectedLibrary)
                             option_button.Parent = dropdown_container
                             option_button.BackgroundColor3 = Color3.fromRGB(26, 26, 31)
                             option_button.BorderSizePixel = 0
-                            option_button.Size = UDim2.new(1, -8, 0, 24)
-                            option_button.Position = UDim2.new(0, 4, 0, 0)
+                            option_button.Size = UDim2.new(1, 0, 0, 25)
                             option_button.AutoButtonColor = false
                             option_button.Text = ""
-                            option_button.ZIndex = 25
+                            option_button.ZIndex = 125
 
                             option_corner.CornerRadius = UDim.new(0, 4)
                             option_corner.Parent = option_button
@@ -1371,10 +1403,10 @@ function bungiesLibrary.Load(SelectedLibrary)
                             selected_bar.Parent = option_button
                             selected_bar.BackgroundColor3 = Color3.fromRGB(125, 88, 220)
                             selected_bar.BorderSizePixel = 0
-                            selected_bar.Position = UDim2.new(0, 0, 0, 4)
-                            selected_bar.Size = UDim2.new(0, 2, 1, -8)
+                            selected_bar.Position = UDim2.new(0, 0, 0, 5)
+                            selected_bar.Size = UDim2.new(0, 2, 1, -10)
                             selected_bar.BackgroundTransparency = 1
-                            selected_bar.ZIndex = 26
+                            selected_bar.ZIndex = 126
 
                             option_text.Name = "button_dropdown_text"
                             option_text.Parent = option_button
@@ -1387,24 +1419,35 @@ function bungiesLibrary.Load(SelectedLibrary)
                             option_text.TextSize = 12
                             option_text.TextXAlignment = Enum.TextXAlignment.Left
                             option_text.TextTruncate = Enum.TextTruncate.AtEnd
-                            option_text.ZIndex = 26
+                            option_text.ZIndex = 126
 
                             option_button.MouseEnter:Connect(function()
                                 if selectedValue ~= option then
                                     option_button.BackgroundColor3 = Color3.fromRGB(34, 34, 40)
                                 end
                             end)
+
                             option_button.MouseLeave:Connect(function()
                                 if selectedValue ~= option then
                                     option_button.BackgroundColor3 = Color3.fromRGB(26, 26, 31)
                                 end
                             end)
+
                             option_button.MouseButton1Click:Connect(function()
                                 choose(option, true)
                             end)
 
-                            optionButtons[option] = {Button = option_button, Label = option_text, Bar = selected_bar}
-                            refreshHolderSize()
+                            optionButtons[option] = {
+                                Button = option_button,
+                                Label = option_text,
+                                Bar = selected_bar
+                            }
+
+                            if selectedValue == option then
+                                choose(option, false)
+                            else
+                                refreshHolderSize()
+                            end
                         end
 
                         local function removeOption(option)
@@ -1417,54 +1460,111 @@ function bungiesLibrary.Load(SelectedLibrary)
                             refreshHolderSize()
                         end
 
+                        local function clearOptions()
+                            for option, data in pairs(optionButtons) do
+                                if data and data.Button then
+                                    data.Button:Destroy()
+                                end
+                                optionButtons[option] = nil
+                            end
+                            refreshHolderSize()
+                        end
+
+                        local function setOptions(newOptions)
+                            clearOptions()
+                            for _, option in ipairs(newOptions or {}) do
+                                addOption(option)
+                            end
+
+                            if not optionButtons[selectedValue] then
+                                local first = (newOptions or {})[1]
+                                if first ~= nil then
+                                    choose(first, false)
+                                else
+                                    selectedValue = ". . ."
+                                    button_dropdown_text.Text = selectedValue
+                                end
+                            else
+                                choose(selectedValue, false)
+                            end
+
+                            refreshHolderSize()
+                        end
+
                         button_dropdown.MouseButton1Click:Connect(function()
                             dropdownIsOpen = not dropdownIsOpen
                             refreshHolderSize()
                         end)
+
                         button_dropdown.MouseEnter:Connect(function()
                             dropdown_stroke.Color = Color3.fromRGB(125, 88, 220)
                         end)
+
                         button_dropdown.MouseLeave:Connect(function()
                             dropdown_stroke.Color = Color3.fromRGB(62, 62, 70)
                         end)
 
-                        for _, option in next, Configuration_Dropdown.Options do
-                            addOption(option)
-                        end
+                        setOptions(Configuration_Dropdown.Options)
+
                         if optionButtons[selectedValue] then
                             choose(selectedValue, false)
+                        else
+                            button_dropdown_text.Text = selectedValue
                         end
+
                         refreshHolderSize()
 
                         local DropdownTools = {}
+
                         function DropdownTools.SetText(new)
                             label_dropdown.Text = tostring(new)
                         end
+
                         function DropdownTools.SetValue(new)
                             if not optionButtons[tostring(new)] then
                                 addOption(new)
                             end
                             choose(new, false)
                         end
+
                         function DropdownTools.GetValue()
                             return selectedValue
                         end
+
                         function DropdownTools.AddOption(option)
                             addOption(option)
                         end
+
                         function DropdownTools.RemoveOption(option)
                             removeOption(option)
                         end
+
                         function DropdownTools.ClearOptions()
-                            for option in pairs(optionButtons) do
-                                removeOption(option)
-                            end
+                            clearOptions()
                         end
+
+                        -- Compatibility aliases for scripts that call :Refresh(), :Update(), or :update()
+                        function DropdownTools.Refresh(newOptions)
+                            setOptions(newOptions or {})
+                        end
+
+                        function DropdownTools.Update(newOptions)
+                            setOptions(newOptions or {})
+                        end
+
+                        function DropdownTools.update(newOptions)
+                            setOptions(newOptions or {})
+                        end
+
                         AddLocalDropdownOption = addOption
                         RemoveLocalDropdownOption = removeOption
-                        SetLocalDropdownText = function(new) label_dropdown.Text = tostring(new) end
+                        SetLocalDropdownText = function(new)
+                            label_dropdown.Text = tostring(new)
+                        end
+
                         return DropdownTools
                     end
+
 function SectionTools:CreateSlider(Configuration_Slider)
                         Configuration_Slider = Configuration_Slider or {}
                         Configuration_Slider.Values = Configuration_Slider.Values or {}
