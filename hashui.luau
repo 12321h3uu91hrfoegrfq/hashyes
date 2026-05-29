@@ -19,6 +19,22 @@ local ContentService = game:GetService("ContentProvider")
 
 -- / Main Library
 local bungiesLibrary = {}
+
+--// global cleanup support, so Library:Destroy() works from scripts
+bungiesLibrary._activeGuis = bungiesLibrary._activeGuis or {}
+function bungiesLibrary:Destroy()
+    for i = #self._activeGuis, 1, -1 do
+        local gui = self._activeGuis[i]
+        if gui and gui.Parent then
+            pcall(function()
+                gui:Destroy()
+            end)
+        end
+        table.remove(self._activeGuis, i)
+    end
+    getgenv().ui = false
+end
+
 getgenv().ui = false
 function bungiesLibrary.Load(SelectedLibrary)
     SelectedLibrary = tostring(SelectedLibrary or "")
@@ -191,6 +207,7 @@ function bungiesLibrary.Load(SelectedLibrary)
 
             private.Name = genKey()
             private.Parent = CoreGuiService
+            table.insert(bungiesLibrary._activeGuis, private)
 
             design.Name = "design"
             design.Parent = private
@@ -2145,7 +2162,15 @@ function SectionTools:CreateSlider(Configuration_Slider)
                     TweenService:Create(designScale, TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Scale = 0.92}):Play()
                     TweenService:Create(design, TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
                     task.wait(0.2)
-                    private:Destroy()
+                    if private and private.Parent then
+                        private:Destroy()
+                    end
+                    for i = #bungiesLibrary._activeGuis, 1, -1 do
+                        if bungiesLibrary._activeGuis[i] == private then
+                            table.remove(bungiesLibrary._activeGuis, i)
+                        end
+                    end
+                    getgenv().ui = false
                 end)
             end
             return InterfaceTools
@@ -2159,6 +2184,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
         notifications.Name = "notifications"
         notifications.Parent = CoreGuiService
+        table.insert(bungiesLibrary._activeGuis, notifications)
         notifications.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
         layout_notifications.Name = "layout_notifications"
