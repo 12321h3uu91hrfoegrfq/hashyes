@@ -1,3 +1,5 @@
+-- hashui.luau | full original patched to Hash Hub loading-screen style
+-- kept original API + components; changed visual style/animations only
 --  //    stop looking here
 --  //    made by bungie#4857
 
@@ -193,10 +195,27 @@ function bungiesLibrary.Load(SelectedLibrary)
             design.Name = "design"
             design.Parent = private
             design.AnchorPoint = Vector2.new(0.5, 0.5)
-            design.BackgroundColor3 = Color3.fromRGB(111, 83, 177)
-            design.BorderColor3 = Color3.fromRGB(23, 23, 23)
+            design.BackgroundColor3 = Color3.fromRGB(135, 105, 215)
+            design.BorderColor3 = Color3.fromRGB(18, 18, 20)
             design.Position = UDim2.new(0.5, 0, 0.5, 0)
             design.Size = UDim2.new(0, 513, 0, 585)
+            design.BackgroundTransparency = 0
+            design.ClipsDescendants = false
+
+            local designScale = Instance.new("UIScale")
+            designScale.Name = "hashhub_smooth_scale"
+            designScale.Scale = 1
+            designScale.Parent = design
+
+            local designCorner = Instance.new("UICorner")
+            designCorner.CornerRadius = UDim.new(0, 8)
+            designCorner.Parent = design
+
+            local designStroke = Instance.new("UIStroke")
+            designStroke.Color = Color3.fromRGB(135, 105, 215)
+            designStroke.Transparency = 0.25
+            designStroke.Thickness = 1
+            designStroke.Parent = design
             designLatency = 0.075
             Drag(
                 {
@@ -205,10 +224,37 @@ function bungiesLibrary.Load(SelectedLibrary)
                 }
             )
             local visKey = Configuration.VisibleKeybind
+            local windowVisible = true
+            local toggleBusy = false
+            local function setWindowVisible(state)
+                if toggleBusy or windowVisible == state then return end
+                toggleBusy = true
+                windowVisible = state
+
+                if state then
+                    design.Visible = true
+                    designScale.Scale = 0.965
+                    design.BackgroundTransparency = 0.25
+                    TweenService:Create(designScale, TweenInfo.new(0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Scale = 1}):Play()
+                    TweenService:Create(design, TweenInfo.new(0.20, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+                    task.delay(0.25, function()
+                        toggleBusy = false
+                    end)
+                else
+                    TweenService:Create(designScale, TweenInfo.new(0.20, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Scale = 0.94}):Play()
+                    TweenService:Create(design, TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {BackgroundTransparency = 0.45}):Play()
+                    task.delay(0.20, function()
+                        design.Visible = false
+                        toggleBusy = false
+                    end)
+                end
+            end
+
             UserInputService.InputBegan:Connect(
-                function(i)
+                function(i, gameProcessed)
+                    if gameProcessed then return end
                     if i.KeyCode == visKey then
-                        design.Visible = not design.Visible
+                        setWindowVisible(not windowVisible)
                     end
                 end
             )
@@ -216,10 +262,14 @@ function bungiesLibrary.Load(SelectedLibrary)
             design_1.Name = "design_1"
             design_1.Parent = design
             design_1.AnchorPoint = Vector2.new(0.5, 0.5)
-            design_1.BackgroundColor3 = Color3.fromRGB(43, 43, 43)
-            design_1.BorderColor3 = Color3.fromRGB(23, 23, 23)
+            design_1.BackgroundColor3 = Color3.fromRGB(28, 28, 30)
+            design_1.BorderColor3 = Color3.fromRGB(18, 18, 20)
             design_1.Position = UDim2.new(0.5, 0, 0.5, 0)
             design_1.Size = UDim2.new(0, 509, 0, 581)
+
+            local design1Corner = Instance.new("UICorner")
+            design1Corner.CornerRadius = UDim.new(0, 7)
+            design1Corner.Parent = design_1
 
             layout_design_1.Name = "layout_design_1"
             layout_design_1.Parent = design_1
@@ -230,24 +280,28 @@ function bungiesLibrary.Load(SelectedLibrary)
             background.Name = "background"
             background.Parent = design_1
             background.AnchorPoint = Vector2.new(0.5, 0.5)
-            background.BackgroundColor3 = Color3.fromRGB(33, 33, 33)
-            background.BorderColor3 = Color3.fromRGB(23, 23, 23)
+            background.BackgroundColor3 = Color3.fromRGB(20, 20, 21)
+            background.BorderColor3 = Color3.fromRGB(18, 18, 20)
             background.Position = UDim2.new(0.5, 0, 0.5, 0)
             background.Size = UDim2.new(0, 505, 0, 577)
 
+            local backgroundCorner = Instance.new("UICorner")
+            backgroundCorner.CornerRadius = UDim.new(0, 6)
+            backgroundCorner.Parent = background
+
             container_tabs.Name = "container_tabs"
             container_tabs.Parent = background
-            container_tabs.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
+            container_tabs.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
             container_tabs.BorderSizePixel = 0
             container_tabs.Position = UDim2.new(0.00100000005, 0, 0.0869999975, 0)
             container_tabs.Size = UDim2.new(0, 504, 0, 507)
 
             header_label.Name = "header_label"
             header_label.Parent = background
-            header_label.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            header_label.BackgroundColor3 = Color3.fromRGB(16, 16, 18)
             header_label.BorderSizePixel = 0
             header_label.Size = UDim2.new(0, 505, 0, 19)
-            header_label.Font = Enum.Font.Jura
+            header_label.Font = Enum.Font.Gotham
             header_label.LineHeight = 1.150
             header_label.Text = Configuration.Header
             header_label.TextColor3 = Color3.fromRGB(232, 232, 232)
@@ -263,15 +317,15 @@ function bungiesLibrary.Load(SelectedLibrary)
 
             footer_label.Name = "footer_label"
             footer_label.Parent = background
-            footer_label.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            footer_label.BackgroundColor3 = Color3.fromRGB(16, 16, 18)
             footer_label.BackgroundTransparency = 0.300
             footer_label.BorderSizePixel = 0
             footer_label.Position = UDim2.new(0, 0, 0.967071056, 0)
             footer_label.Size = UDim2.new(0, 505, 0, 19)
-            footer_label.Font = Enum.Font.Jura
+            footer_label.Font = Enum.Font.Gotham
             footer_label.LineHeight = 1.150
             footer_label.Text = Configuration.Footer
-            footer_label.TextColor3 = Color3.fromRGB(200, 200, 200)
+            footer_label.TextColor3 = Color3.fromRGB(70, 60, 95)
             footer_label.TextSize = 15.000
             footer_label.TextStrokeColor3 = Color3.fromRGB(16, 16, 16)
             footer_label.TextStrokeTransparency = 0.500
@@ -284,14 +338,14 @@ function bungiesLibrary.Load(SelectedLibrary)
 
             cut_tab_buttons.Name = "cut_tab_buttons"
             cut_tab_buttons.Parent = background
-            cut_tab_buttons.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            cut_tab_buttons.BackgroundColor3 = Color3.fromRGB(60, 52, 82)
             cut_tab_buttons.BorderSizePixel = 0
             cut_tab_buttons.Position = UDim2.new(0, 0, 0.0849220082, 0)
             cut_tab_buttons.Size = UDim2.new(0, 505, 0, 1)
 
             cut_header.Name = "cut_header"
             cut_header.Parent = background
-            cut_header.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            cut_header.BackgroundColor3 = Color3.fromRGB(60, 52, 82)
             cut_header.BackgroundTransparency = 0.300
             cut_header.BorderSizePixel = 0
             cut_header.Position = UDim2.new(0, 0, 0.031195838, 0)
@@ -299,7 +353,7 @@ function bungiesLibrary.Load(SelectedLibrary)
 
             cut_footer.Name = "cut_footer"
             cut_footer.Parent = background
-            cut_footer.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            cut_footer.BackgroundColor3 = Color3.fromRGB(60, 52, 82)
             cut_footer.BackgroundTransparency = 0.600
             cut_footer.BorderSizePixel = 0
             cut_footer.Position = UDim2.new(0, 0, 0.965337932, 0)
@@ -307,7 +361,7 @@ function bungiesLibrary.Load(SelectedLibrary)
 
             container_tab_buttons.Name = "container_tab_buttons"
             container_tab_buttons.Parent = background
-            container_tab_buttons.BackgroundColor3 = Color3.fromRGB(23, 23, 23)
+            container_tab_buttons.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
             container_tab_buttons.BorderSizePixel = 0
             container_tab_buttons.Position = UDim2.new(0, 0, 0.0329289436, 0)
             container_tab_buttons.Size = UDim2.new(0, 505, 0, 30)
@@ -354,13 +408,13 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                 button_tab.Name = "button_tab"
                 button_tab.Parent = container_tab_buttons
-                button_tab.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+                button_tab.BackgroundColor3 = Color3.fromRGB(21, 21, 23)
                 button_tab.BackgroundTransparency = 0.4
-                button_tab.BorderColor3 = Color3.fromRGB(50, 50, 50)
+                button_tab.BorderColor3 = Color3.fromRGB(60, 52, 82)
                 button_tab.Position = UDim2.new(0.0118811885, 0, 0.233333334, 0)
                 button_tab.Size = UDim2.new(0, math.max(15, button_tab.TextBounds.X), 0, 22)
                 button_tab.AutoButtonColor = false
-                button_tab.Font = Enum.Font.Jura
+                button_tab.Font = Enum.Font.Gotham
                 button_tab.LineHeight = 1.150
                 button_tab.Text = Configuration_Page.Subject
                 button_tab.TextColor3 = Color3.fromRGB(180, 180, 180)
@@ -381,8 +435,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                 cut_button_tab.Name = "cut_button_tab"
                 cut_button_tab.Parent = button_tab
-                cut_button_tab.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
-                cut_button_tab.BorderColor3 = Color3.fromRGB(27, 27, 27)
+                cut_button_tab.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
+                cut_button_tab.BorderColor3 = Color3.fromRGB(24, 24, 26)
                 cut_button_tab.Position = UDim2.new(0, 0, 1, 0)
                 cut_button_tab.Size = UDim2.new(0, button_tab.Size.X.Offset - 4, 0, 1)
                 cut_button_tab.ZIndex = 2
@@ -459,7 +513,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                 if isFirstPageAdded then
                     PageIsVisible = true
                     tab.Visible = true
-                    button_tab.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
+                    button_tab.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
                     button_tab.BackgroundTransparency = 0
                     button_tab.TextColor3 = Color3.fromRGB(222, 222, 222)
                     button_tab.TextTransparency = 0
@@ -479,7 +533,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                         end
                         for i, v in next, container_tab_buttons:GetChildren() do
                             if v:IsA("TextButton") then
-                                v.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+                                v.BackgroundColor3 = Color3.fromRGB(21, 21, 23)
                                 v.BackgroundTransparency = 0.4
                                 v.TextColor3 = Color3.fromRGB(180, 180, 180)
                                 v.TextTransparency = 0.4
@@ -493,7 +547,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                             end
                         end
                         tab.Visible = true
-                        button_tab.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
+                        button_tab.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
                         button_tab.BackgroundTransparency = 0
                         button_tab.TextColor3 = Color3.fromRGB(222, 222, 222)
                         button_tab.TextTransparency = 0
@@ -530,8 +584,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                     section.Name = "section"
                     section.Parent = alignedContainer
-                    section.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-                    section.BorderColor3 = Color3.fromRGB(30, 30, 30)
+                    section.BackgroundColor3 = Color3.fromRGB(16, 16, 18)
+                    section.BorderColor3 = Color3.fromRGB(29, 29, 32)
                     section.Position = UDim2.new(0.0317460336, 0, 0.0197238661, 0)
                     section.Size = UDim2.new(0, 236, 0, 1)
 
@@ -543,7 +597,7 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                     section_design.Name = "section_design"
                     section_design.Parent = section
-                    section_design.BackgroundColor3 = Color3.fromRGB(111, 83, 177)
+                    section_design.BackgroundColor3 = Color3.fromRGB(135, 105, 215)
                     section_design.BorderSizePixel = 0
                     section_design.Size = UDim2.new(0, 236, 0, 1)
 
@@ -554,7 +608,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                     section_header.BorderSizePixel = 0
                     section_header.Position = UDim2.new(0, 0, 0.0399999991, 0)
                     section_header.Size = UDim2.new(0, 236, 0, 18)
-                    section_header.Font = Enum.Font.Jura
+                    section_header.Font = Enum.Font.Gotham
                     section_header.LineHeight = 1.150
                     section_header.Text = Configuration_Section.Header
                     section_header.TextColor3 = Color3.fromRGB(225, 225, 225)
@@ -567,6 +621,16 @@ function bungiesLibrary.Load(SelectedLibrary)
                     padding_section_header.Name = "padding_section_header"
                     padding_section_header.Parent = section_header
                     padding_section_header.PaddingLeft = UDim.new(0, 7)
+
+                    local sectionCorner = Instance.new("UICorner")
+                    sectionCorner.CornerRadius = UDim.new(0, 6)
+                    sectionCorner.Parent = section
+
+                    local sectionStroke = Instance.new("UIStroke")
+                    sectionStroke.Color = Color3.fromRGB(50, 45, 66)
+                    sectionStroke.Transparency = 0.35
+                    sectionStroke.Thickness = 1
+                    sectionStroke.Parent = section
 
                     constraint_section.Name = "constraint_section"
                     constraint_section.Parent = section
@@ -603,8 +667,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                         design_button.Name = "design_button"
                         design_button.Parent = section
                         design_button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        design_button.BorderColor3 = Color3.fromRGB(200, 200, 200)
-                        design_button.Size = UDim2.new(0, 221, 0, 16)
+                        design_button.BorderColor3 = Color3.fromRGB(70, 60, 95)
+                        design_button.Size = UDim2.new(0, 221, 0, 22)
 
                         layout_design_button.Name = "layout_design_button"
                         layout_design_button.Parent = design_button
@@ -616,17 +680,17 @@ function bungiesLibrary.Load(SelectedLibrary)
                         button.Parent = design_button
                         button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         button.BorderSizePixel = 0
-                        button.Size = UDim2.new(0, 219, 0, 14)
+                        button.Size = UDim2.new(0, 219, 0, 20)
                         button.AutoButtonColor = false
-                        button.Font = Enum.Font.Jura
+                        button.Font = Enum.Font.Gotham
                         button.Text = ""
                         button.TextColor3 = Color3.fromRGB(225, 225, 225)
                         button.TextSize = 14.000
 
                         gradient_design_button.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(24, 24, 26)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 31))
                         }
                         gradient_design_button.Rotation = 90
                         gradient_design_button.Name = "gradient_design_button"
@@ -642,23 +706,31 @@ function bungiesLibrary.Load(SelectedLibrary)
                         button_text.Parent = button
                         button_text.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         button_text.BackgroundTransparency = 1.000
-                        button_text.Size = UDim2.new(0, 219, 0, 14)
-                        button_text.Font = Enum.Font.Jura
+                        button_text.Size = UDim2.new(0, 219, 0, 20)
+                        button_text.Font = Enum.Font.Gotham
                         button_text.LineHeight = 1
                         button_text.Text = Configuration_Button.Text
                         button_text.TextColor3 = Color3.fromRGB(220, 220, 220)
-                        button_text.TextSize = 13.000
+                        button_text.TextSize = 14.000
                         button_text.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
                         button_text.TextStrokeTransparency = 0.300
 
                         gradient_design_button_2.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(20, 20, 21)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 32))
                         }
                         gradient_design_button_2.Rotation = 90
                         gradient_design_button_2.Name = "gradient_design_button"
                         gradient_design_button_2.Parent = design_button
+
+                        local buttonCorner = Instance.new("UICorner")
+                        buttonCorner.CornerRadius = UDim.new(0, 4)
+                        buttonCorner.Parent = design_button
+
+                        local innerButtonCorner = Instance.new("UICorner")
+                        innerButtonCorner.CornerRadius = UDim.new(0, 3)
+                        innerButtonCorner.Parent = button
 
                         updateSection()
                         updateSize()
@@ -667,8 +739,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button_2.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(132, 100, 213)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(145, 110, 220)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(92, 68, 158))
                                 }
                             end
                         )
@@ -676,8 +748,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button_2.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(35, 35, 39)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(31, 31, 35))
                                 }
                             end
                         )
@@ -686,8 +758,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(24, 24, 24)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(21, 21, 23)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 31))
                                 }
                             end
                         )
@@ -702,7 +774,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                                 gradient_design_button.Color =
                                     ColorSequence.new {
                                     ColorSequenceKeypoint.new(0.00, Color3.fromRGB(31, 31, 31)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 32))
                                 }
                             end
                         )
@@ -747,8 +819,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                         button_toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         button_toggle.BackgroundTransparency = 1.000
                         button_toggle.Position = UDim2.new(0, 0, 0.109170303, 0)
-                        button_toggle.Size = UDim2.new(0, 236, 0, 20)
-                        button_toggle.Font = Enum.Font.Jura
+                        button_toggle.Size = UDim2.new(0, 236, 0, 22)
+                        button_toggle.Font = Enum.Font.Gotham
                         button_toggle.LineHeight = 1.250
                         button_toggle.Text = "        " .. Configuration_Toggle.Text
                         button_toggle.TextColor3 = Color3.fromRGB(220, 220, 220)
@@ -765,7 +837,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                         design_button_toggle.Name = "design_button_toggle"
                         design_button_toggle.Parent = button_toggle
                         design_button_toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        design_button_toggle.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_button_toggle.BorderColor3 = Color3.fromRGB(70, 60, 95)
                         design_button_toggle.Position = UDim2.new(0, 0, 0.192307696, 0)
                         design_button_toggle.Size = UDim2.new(0, 14, 0, 14)
 
@@ -777,8 +849,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         gradient_design_button_toggle.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(35, 35, 39)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(31, 31, 35))
                         }
                         gradient_design_button_toggle.Rotation = 90
                         gradient_design_button_toggle.Name = "gradient_design_button_toggle"
@@ -787,7 +859,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                         design_button_toggle_2.Name = "design_button_toggle_2"
                         design_button_toggle_2.Parent = design_button_toggle
                         design_button_toggle_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        design_button_toggle_2.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_button_toggle_2.BorderColor3 = Color3.fromRGB(70, 60, 95)
                         design_button_toggle_2.BorderSizePixel = 0
                         design_button_toggle_2.Position = UDim2.new(0, 0, 0.192307696, 0)
                         design_button_toggle_2.Size = UDim2.new(0, 12, 0, 12)
@@ -800,8 +872,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         gradient_design_button_toggle_2.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(24, 24, 26)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 31))
                         }
                         gradient_design_button_toggle_2.Rotation = 90
                         gradient_design_button_toggle_2.Name = "gradient_design_button_toggle_2"
@@ -821,12 +893,12 @@ function bungiesLibrary.Load(SelectedLibrary)
                                 local ToggleGradient =
                                     ToggleEnabled and
                                     ColorSequence.new {
-                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(102, 78, 167)),
-                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(70, 53, 115))
+                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(135, 105, 215)),
+                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(88, 64, 150))
                                     } or
                                     ColorSequence.new {
-                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(24, 24, 26)),
+                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 31))
                                     }
                                 gradient_design_button_toggle_2.Color = ToggleGradient
 
@@ -840,8 +912,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button_toggle.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(132, 100, 213)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(145, 110, 220)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(92, 68, 158))
                                 }
                             end
                         )
@@ -849,8 +921,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button_toggle.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(35, 35, 39)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(31, 31, 35))
                                 }
                             end
                         )
@@ -1189,7 +1261,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         label_holder_slider.BackgroundTransparency = 1.000
                         label_holder_slider.Position = UDim2.new(0, 0, 0.615384638, 0)
                         label_holder_slider.Size = UDim2.new(0, 223, 0, 14)
-                        label_holder_slider.Font = Enum.Font.Jura
+                        label_holder_slider.Font = Enum.Font.Gotham
                         label_holder_slider.Text = Configuration_Slider.Text
                         label_holder_slider.TextColor3 = Color3.fromRGB(225, 225, 225)
                         label_holder_slider.TextSize = 13.000
@@ -1200,7 +1272,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         design_slider.Name = "design_slider"
                         design_slider.Parent = holder_slider
                         design_slider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        design_slider.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_slider.BorderColor3 = Color3.fromRGB(70, 60, 95)
                         design_slider.ClipsDescendants = true
                         design_slider.Position = UDim2.new(0, 0, 0.533333361, 0)
                         design_slider.Size = UDim2.new(0, 221, 0, 14)
@@ -1214,8 +1286,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_slider.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(20, 20, 21)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 32))
                         }
                         gradient_design_slider.Rotation = 90
                         gradient_design_slider.Name = "gradient_design_slider"
@@ -1224,10 +1296,10 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         button_slider.Name = "button_slider"
                         button_slider.Parent = design_slider
                         button_slider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        button_slider.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        button_slider.BorderColor3 = Color3.fromRGB(70, 60, 95)
                         button_slider.Size = UDim2.new(0, 217, 0, 10)
                         button_slider.AutoButtonColor = false
-                        button_slider.Font = Enum.Font.SourceSans
+                        button_slider.Font = Enum.Font.Gotham
                         button_slider.Text = ""
                         button_slider.TextColor3 = Color3.fromRGB(0, 0, 0)
                         button_slider.TextSize = 14.000
@@ -1235,8 +1307,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_button_slider.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(24, 24, 26)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 31))
                         }
                         gradient_button_slider.Rotation = 90
                         gradient_button_slider.Name = "gradient_button_slider"
@@ -1252,8 +1324,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_2_slider.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(102, 78, 167)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(55, 42, 91))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(135, 105, 215)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(88, 64, 150))
                         }
                         gradient_design_2_slider.Rotation = 90
                         gradient_design_2_slider.Name = "gradient_design_2_slider"
@@ -1279,7 +1351,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         button_slider_value.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         button_slider_value.BackgroundTransparency = 1.000
                         button_slider_value.Size = UDim2.new(0, 217, 0, 10)
-                        button_slider_value.Font = Enum.Font.Jura
+                        button_slider_value.Font = Enum.Font.Gotham
                         button_slider_value.LineHeight = 1.400
                         button_slider_value.Text = "0%"
                         button_slider_value.TextColor3 = Color3.fromRGB(225, 225, 225)
@@ -1298,8 +1370,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_invisible_slider_cut.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(24, 24, 26)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 31))
                         }
                         gradient_invisible_slider_cut.Rotation = 90
                         gradient_invisible_slider_cut.Name = "gradient_invisible_slider_cut"
@@ -1319,8 +1391,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             function()
                                 gradient_design_slider.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(132, 100, 213)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(145, 110, 220)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(92, 68, 158))
                                 }
                             end
                         )
@@ -1328,8 +1400,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             function()
                                 gradient_design_slider.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(20, 20, 21)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 32))
                                 }
                             end
                         )
@@ -1660,7 +1732,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         label_keybind.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         label_keybind.BackgroundTransparency = 1.000
                         label_keybind.Size = UDim2.new(0, 232, 0, 16)
-                        label_keybind.Font = Enum.Font.Jura
+                        label_keybind.Font = Enum.Font.Gotham
                         label_keybind.Text = " " .. Configuration_Keybind.Text
                         label_keybind.TextColor3 = Color3.fromRGB(225, 225, 225)
                         label_keybind.TextSize = 13.000
@@ -1672,14 +1744,14 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         design_keybind_2.Name = "design_keybind_2"
                         design_keybind_2.Parent = anti_keybind_layout
                         design_keybind_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        design_keybind_2.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_keybind_2.BorderColor3 = Color3.fromRGB(70, 60, 95)
                         design_keybind_2.Position = UDim2.new(0.912946403, 0, 0.0625, 0)
                         design_keybind_2.Size = UDim2.new(0, 26, 0, 14)
 
                         gradient_design_keybind_2.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(35, 35, 39)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(31, 31, 35))
                         }
                         gradient_design_keybind_2.Rotation = 90
                         gradient_design_keybind_2.Name = "gradient_design_keybind_2"
@@ -1700,8 +1772,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_textbox_3.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(24, 24, 26)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 31))
                         }
                         gradient_design_textbox_3.Rotation = 90
                         gradient_design_textbox_3.Name = "gradient_design_textbox_3"
@@ -1718,7 +1790,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         button_keybind.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         button_keybind.BackgroundTransparency = 1.000
                         button_keybind.Size = UDim2.new(0, 24, 0, 12)
-                        button_keybind.Font = Enum.Font.Jura
+                        button_keybind.Font = Enum.Font.Gotham
                         button_keybind.LineHeight = 1.100
                         button_keybind.Text = ". . ."
                         button_keybind.TextColor3 = Color3.fromRGB(190, 190, 190)
@@ -1774,8 +1846,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             function()
                                 gradient_design_keybind_2.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(132, 100, 213)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(145, 110, 220)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(92, 68, 158))
                                 }
                             end
                         )
@@ -1783,8 +1855,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             function()
                                 gradient_design_keybind_2.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(35, 35, 39)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(31, 31, 35))
                                 }
                             end
                         )
@@ -1824,8 +1896,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         button_toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         button_toggle.BackgroundTransparency = 1.000
                         button_toggle.Position = UDim2.new(0, 0, 0.109170303, 0)
-                        button_toggle.Size = UDim2.new(0, 236, 0, 20)
-                        button_toggle.Font = Enum.Font.Jura
+                        button_toggle.Size = UDim2.new(0, 236, 0, 22)
+                        button_toggle.Font = Enum.Font.Gotham
                         button_toggle.LineHeight = 1.250
                         button_toggle.Text = "        " .. Configuration_Check.Text
                         button_toggle.TextColor3 = Color3.fromRGB(220, 220, 220)
@@ -1842,7 +1914,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         design_button_toggle.Name = "design_button_toggle"
                         design_button_toggle.Parent = button_toggle
                         design_button_toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        design_button_toggle.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_button_toggle.BorderColor3 = Color3.fromRGB(70, 60, 95)
                         design_button_toggle.Position = UDim2.new(0, 0, 0.192307696, 0)
                         design_button_toggle.Size = UDim2.new(0, 14, 0, 14)
 
@@ -1860,8 +1932,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_button_toggle.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(35, 35, 39)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(31, 31, 35))
                         }
                         gradient_design_button_toggle.Rotation = 90
                         gradient_design_button_toggle.Name = "gradient_design_button_toggle"
@@ -1870,7 +1942,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         design_button_toggle_2.Name = "design_button_toggle_2"
                         design_button_toggle_2.Parent = design_button_toggle
                         design_button_toggle_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        design_button_toggle_2.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_button_toggle_2.BorderColor3 = Color3.fromRGB(70, 60, 95)
                         design_button_toggle_2.BorderSizePixel = 0
                         design_button_toggle_2.Position = UDim2.new(0, 0, 0.192307696, 0)
                         design_button_toggle_2.Size = UDim2.new(0, 12, 0, 12)
@@ -1889,8 +1961,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_button_toggle_2.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(24, 24, 26)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 31))
                         }
                         gradient_design_button_toggle_2.Rotation = 90
                         gradient_design_button_toggle_2.Name = "gradient_design_button_toggle_2"
@@ -1910,12 +1982,12 @@ function SectionTools:CreateSlider(Configuration_Slider)
                                 local ToggleGradient =
                                     ToggleEnabled and
                                     ColorSequence.new {
-                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(102, 78, 167)),
-                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(70, 53, 115))
+                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(135, 105, 215)),
+                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(88, 64, 150))
                                     } or
                                     ColorSequence.new {
-                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(24, 24, 26)),
+                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(28, 28, 31))
                                     }
                                 gradient_design_button_toggle_2.Color = ToggleGradient
 
@@ -1931,8 +2003,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             function()
                                 gradient_design_button_toggle.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(132, 100, 213)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(145, 110, 220)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(92, 68, 158))
                                 }
                             end
                         )
@@ -1940,8 +2012,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             function()
                                 gradient_design_button_toggle.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(35, 35, 39)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(31, 31, 35))
                                 }
                             end
                         )
@@ -1993,7 +2065,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         label.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         label.BackgroundTransparency = 1.000
                         label.Size = UDim2.new(0, 232, 0, 16)
-                        label.Font = Enum.Font.Jura
+                        label.Font = Enum.Font.Gotham
                         label.Text = " " .. Configuration_Label.Text
                         label.TextColor3 = Color3.fromRGB(225, 225, 225)
                         label.TextSize = 13.000
@@ -2069,7 +2141,12 @@ function SectionTools:CreateSlider(Configuration_Slider)
                 visKey = new
             end
             function InterfaceTools.Destroy()
-                design:Destroy()
+                pcall(function()
+                    TweenService:Create(designScale, TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {Scale = 0.92}):Play()
+                    TweenService:Create(design, TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
+                    task.wait(0.2)
+                    private:Destroy()
+                end)
             end
             return InterfaceTools
         end
@@ -2115,8 +2192,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
             design.Name = "design"
             design.Parent = notifications
-            design.BackgroundColor3 = Color3.fromRGB(111, 83, 177)
-            design.BorderColor3 = Color3.fromRGB(23, 23, 23)
+            design.BackgroundColor3 = Color3.fromRGB(135, 105, 215)
+            design.BorderColor3 = Color3.fromRGB(18, 18, 20)
             design.Position = UDim2.new(0.0193798449, 0, 0.0727272704, 0)
             design.Size = UDim2.new(0, 332, 0, 70)
 
@@ -2129,8 +2206,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
             design_1.Name = "design_1"
             design_1.Parent = design
             design_1.AnchorPoint = Vector2.new(0.5, 0.5)
-            design_1.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
-            design_1.BorderColor3 = Color3.fromRGB(23, 23, 23)
+            design_1.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
+            design_1.BorderColor3 = Color3.fromRGB(18, 18, 20)
             design_1.BorderSizePixel = 2
             design_1.Position = UDim2.new(0.5, 0, 0.432098776, 0)
             design_1.Size = UDim2.new(0, 326, 0, 64)
@@ -2142,11 +2219,11 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
             haeder_notification.Name = "haeder_notification"
             haeder_notification.Parent = design_1
-            haeder_notification.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            haeder_notification.BackgroundColor3 = Color3.fromRGB(16, 16, 18)
             haeder_notification.BorderSizePixel = 0
             haeder_notification.Position = UDim2.new(0.193251535, 0, -0.0681818202, 0)
             haeder_notification.Size = UDim2.new(0, 326, 0, 24)
-            haeder_notification.Font = Enum.Font.Jura
+            haeder_notification.Font = Enum.Font.Gotham
             haeder_notification.Text = Configuration.Header
             haeder_notification.TextColor3 = Color3.fromRGB(232, 232, 232)
             haeder_notification.TextSize = 15.000
@@ -2166,18 +2243,18 @@ function SectionTools:CreateSlider(Configuration_Slider)
             design_2_cutoff.Position = UDim2.new(0, 0, 1, 0)
             design_2_cutoff.Size = UDim2.new(0, 326, 0, 1)
 
-            gradient_design_2_cutoff.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(102, 78, 167)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(55, 42, 91))}
+            gradient_design_2_cutoff.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(135, 105, 215)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(88, 64, 150))}
             gradient_design_2_cutoff.Rotation = 90
             gradient_design_2_cutoff.Name = "gradient_design_2_cutoff"
             gradient_design_2_cutoff.Parent = design_2_cutoff
 
             note_notification.Name = "note_notification"
             note_notification.Parent = design_1
-            note_notification.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
+            note_notification.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
             note_notification.BorderSizePixel = 0
             note_notification.Position = UDim2.new(0, 0, 0.333333343, 0)
             note_notification.Size = UDim2.new(0, 326, 0, 33)
-            note_notification.Font = Enum.Font.Jura
+            note_notification.Font = Enum.Font.Gotham
             note_notification.Text = Configuration.Notification
             note_notification.TextColor3 = Color3.fromRGB(232, 232, 232)
             note_notification.TextSize = 12.000
@@ -2193,6 +2270,16 @@ function SectionTools:CreateSlider(Configuration_Slider)
             padding_note_notification.PaddingTop = UDim.new(0, 4)
         
             local newNotificationSize = TextService:GetTextSize(note_notification.Text, note_notification.TextSize, note_notification.Font, Vector2.new(math.huge, math.huge))
+            local notifCorner = Instance.new("UICorner")
+            notifCorner.CornerRadius = UDim.new(0, 7)
+            notifCorner.Parent = design
+
+            local notifStroke = Instance.new("UIStroke")
+            notifStroke.Color = Color3.fromRGB(135, 105, 215)
+            notifStroke.Transparency = 0.3
+            notifStroke.Thickness = 1
+            notifStroke.Parent = design
+
             design.Size = UDim2.new(0, 332, 0, newNotificationSize.Y + 40)
             design_1.Size = UDim2.new(0, 326, 0, newNotificationSize.Y + 34)
             note_notification.Size = UDim2.new(0, 326, 0, newNotificationSize.Y)
