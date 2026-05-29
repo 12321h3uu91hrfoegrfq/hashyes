@@ -173,6 +173,239 @@ function bungiesLibrary.Load(SelectedLibrary)
             return getKey()
         end
 
+
+        --// Built-in Hash Hub loading screen
+        local function ShowHashHubLoadingScreen(LoadingConfiguration)
+            LoadingConfiguration = LoadingConfiguration or {}
+
+            local loadingGui = Instance.new("ScreenGui")
+            loadingGui.Name = "HashHubLoading"
+            loadingGui.IgnoreGuiInset = true
+            loadingGui.ResetOnSpawn = false
+            loadingGui.DisplayOrder = 999999
+            loadingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            loadingGui.Parent = CoreGuiService
+            table.insert(bungiesLibrary._activeGuis, loadingGui)
+
+            local bg = Instance.new("Frame")
+            bg.Name = "Background"
+            bg.Size = UDim2.fromScale(1, 1)
+            bg.BackgroundColor3 = Color3.fromRGB(20, 20, 21)
+            bg.BackgroundTransparency = 1
+            bg.BorderSizePixel = 0
+            bg.Parent = loadingGui
+
+            local vignette = Instance.new("Frame")
+            vignette.Name = "Vignette"
+            vignette.AnchorPoint = Vector2.new(0.5, 0.5)
+            vignette.Position = UDim2.fromScale(0.5, 0.5)
+            vignette.Size = UDim2.fromScale(1, 1)
+            vignette.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            vignette.BackgroundTransparency = 1
+            vignette.BorderSizePixel = 0
+            vignette.Parent = bg
+
+            local holder = Instance.new("Frame")
+            holder.Name = "Holder"
+            holder.AnchorPoint = Vector2.new(0.5, 0.5)
+            holder.Position = UDim2.fromScale(0.5, 0.54)
+            holder.Size = UDim2.fromOffset(620, 170)
+            holder.BackgroundTransparency = 1
+            holder.Parent = bg
+
+            local scale = Instance.new("UIScale")
+            scale.Scale = 0.94
+            scale.Parent = holder
+
+            local titleRow = Instance.new("Frame")
+            titleRow.Name = "TitleRow"
+            titleRow.AnchorPoint = Vector2.new(0.5, 0)
+            titleRow.Position = UDim2.new(0.5, 0, 0, 0)
+            titleRow.Size = UDim2.fromOffset(430, 54)
+            titleRow.BackgroundTransparency = 1
+            titleRow.Parent = holder
+
+            local titleLayout = Instance.new("UIListLayout")
+            titleLayout.FillDirection = Enum.FillDirection.Horizontal
+            titleLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+            titleLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+            titleLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            titleLayout.Padding = UDim.new(0, 8)
+            titleLayout.Parent = titleRow
+
+            local title = Instance.new("TextLabel")
+            title.Name = "Title"
+            title.BackgroundTransparency = 1
+            title.AutomaticSize = Enum.AutomaticSize.X
+            title.Size = UDim2.fromOffset(0, 54)
+            title.Font = Enum.Font.GothamMedium
+            title.Text = LoadingConfiguration.Title or "hash hub"
+            title.TextSize = 31
+            title.TextColor3 = Color3.fromRGB(232, 232, 235)
+            title.TextTransparency = 1
+            title.TextXAlignment = Enum.TextXAlignment.Center
+            title.LayoutOrder = 1
+            title.Parent = titleRow
+
+            local version = Instance.new("TextLabel")
+            version.Name = "Version"
+            version.BackgroundTransparency = 1
+            version.AutomaticSize = Enum.AutomaticSize.X
+            version.Size = UDim2.fromOffset(0, 54)
+            version.Font = Enum.Font.GothamMedium
+            version.Text = LoadingConfiguration.Version or "[2.6.3]"
+            version.TextSize = 31
+            version.TextColor3 = Color3.fromRGB(135, 105, 215)
+            version.TextTransparency = 1
+            version.TextXAlignment = Enum.TextXAlignment.Center
+            version.LayoutOrder = 2
+            version.Parent = titleRow
+
+            local underlineGlow = Instance.new("Frame")
+            underlineGlow.Name = "UnderlineGlow"
+            underlineGlow.AnchorPoint = Vector2.new(0.5, 0)
+            underlineGlow.Position = UDim2.new(0.5, 0, 0, 61)
+            underlineGlow.Size = UDim2.fromOffset(0, 1)
+            underlineGlow.BackgroundColor3 = Color3.fromRGB(135, 105, 215)
+            underlineGlow.BackgroundTransparency = 1
+            underlineGlow.BorderSizePixel = 0
+            underlineGlow.Parent = holder
+
+            local underline = Instance.new("Frame")
+            underline.Name = "Underline"
+            underline.AnchorPoint = Vector2.new(0.5, 0)
+            underline.Position = UDim2.new(0.5, 0, 0, 61)
+            underline.Size = UDim2.fromOffset(0, 1)
+            underline.BackgroundColor3 = Color3.fromRGB(135, 105, 215)
+            underline.BackgroundTransparency = 1
+            underline.BorderSizePixel = 0
+            underline.Parent = holder
+
+            local subtitle = Instance.new("TextLabel")
+            subtitle.Name = "Subtitle"
+            subtitle.AnchorPoint = Vector2.new(0.5, 0)
+            subtitle.Position = UDim2.new(0.5, 0, 0, 88)
+            subtitle.Size = UDim2.fromOffset(500, 22)
+            subtitle.BackgroundTransparency = 1
+            subtitle.Font = Enum.Font.Gotham
+            subtitle.TextSize = 14
+            subtitle.RichText = true
+            subtitle.TextTransparency = 1
+            subtitle.TextColor3 = Color3.fromRGB(165, 165, 170)
+            subtitle.Text = 'welcome, <font color="rgb(145,110,220)">' .. Player.Name .. '</font>, please wait.'
+            subtitle.TextXAlignment = Enum.TextXAlignment.Center
+            subtitle.Parent = holder
+
+            local dots = Instance.new("TextLabel")
+            dots.Name = "Dots"
+            dots.AnchorPoint = Vector2.new(0.5, 0)
+            dots.Position = UDim2.new(0.5, 0, 0, 116)
+            dots.Size = UDim2.fromOffset(120, 20)
+            dots.BackgroundTransparency = 1
+            dots.Font = Enum.Font.GothamMedium
+            dots.TextSize = 18
+            dots.TextColor3 = Color3.fromRGB(135, 105, 215)
+            dots.TextTransparency = 1
+            dots.Text = "•  •  •"
+            dots.Parent = holder
+
+            local alive = true
+            task.spawn(function()
+                local states = {
+                    "•  •  •",
+                    "•  •  ◦",
+                    "•  ◦  ◦",
+                    "◦  ◦  ◦",
+                    "•  ◦  ◦",
+                    "•  •  ◦",
+                }
+
+                local index = 1
+                while alive and dots.Parent do
+                    dots.Text = states[index]
+                    index += 1
+                    if index > #states then
+                        index = 1
+                    end
+                    task.wait(0.22)
+                end
+            end)
+
+            local function quickTween(obj, time, props, style, direction)
+                local tw = TweenService:Create(
+                    obj,
+                    TweenInfo.new(time or 0.5, style or Enum.EasingStyle.Quint, direction or Enum.EasingDirection.Out),
+                    props
+                )
+                tw:Play()
+                return tw
+            end
+
+            quickTween(bg, 0.65, {BackgroundTransparency = 0})
+            quickTween(vignette, 0.9, {BackgroundTransparency = 0.72})
+            task.wait(0.2)
+
+            quickTween(scale, 0.8, {Scale = 1}, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            quickTween(holder, 0.8, {Position = UDim2.fromScale(0.5, 0.5)})
+            quickTween(title, 0.75, {TextTransparency = 0})
+            quickTween(version, 0.75, {TextTransparency = 0})
+
+            task.wait(0.16)
+
+            quickTween(underline, 0.7, {
+                Size = UDim2.fromOffset(220, 1),
+                BackgroundTransparency = 0.15
+            })
+
+            quickTween(underlineGlow, 0.7, {
+                Size = UDim2.fromOffset(260, 1),
+                BackgroundTransparency = 0.72
+            })
+
+            task.wait(0.16)
+
+            quickTween(subtitle, 0.7, {
+                TextTransparency = 0,
+                Position = UDim2.new(0.5, 0, 0, 82)
+            })
+
+            task.wait(0.12)
+            quickTween(dots, 0.6, {TextTransparency = 0.15})
+            task.wait(LoadingConfiguration.Duration or 1.75)
+
+            alive = false
+
+            quickTween(scale, 0.55, {Scale = 0.96}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+            quickTween(holder, 0.55, {Position = UDim2.fromScale(0.5, 0.47)}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+            quickTween(title, 0.45, {TextTransparency = 1})
+            quickTween(version, 0.45, {TextTransparency = 1})
+            quickTween(subtitle, 0.45, {
+                TextTransparency = 1,
+                Position = UDim2.new(0.5, 0, 0, 94)
+            })
+            quickTween(dots, 0.35, {TextTransparency = 1})
+            quickTween(underline, 0.45, {
+                Size = UDim2.fromOffset(0, 1),
+                BackgroundTransparency = 1
+            })
+            quickTween(underlineGlow, 0.45, {
+                Size = UDim2.fromOffset(0, 1),
+                BackgroundTransparency = 1
+            })
+
+            task.wait(0.32)
+
+            quickTween(bg, 0.7, {BackgroundTransparency = 1})
+            quickTween(vignette, 0.7, {BackgroundTransparency = 1})
+
+            task.wait(0.75)
+            alive = false
+            if loadingGui and loadingGui.Parent then
+                loadingGui:Destroy()
+            end
+        end
+
+
         -- Window function
         local Interface = {}
         function Interface:Start(Configuration)
@@ -186,6 +419,14 @@ function bungiesLibrary.Load(SelectedLibrary)
                             " | " .. os.date("%d") .. "/" .. os.date("%m") .. "/" .. os.date("%Y"),
                 VisibleKeybind = Configuration.VisibleKeybind or Enum.KeyCode.RightAlt
             }
+
+            pcall(function()
+                ShowHashHubLoadingScreen({
+                    Title = "hash hub",
+                    Version = "[2.6.3]",
+                    Duration = 1.75
+                })
+            end)
 
             local private = Instance.new("ScreenGui")
             local design = Instance.new("Frame")
