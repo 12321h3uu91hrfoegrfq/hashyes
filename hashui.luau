@@ -19,7 +19,10 @@ local ContentService = game:GetService("ContentProvider")
 local bungiesLibrary = {}
 local ENV = (getgenv and getgenv()) or _G
 ENV.ui = false
-function bungiesLibrary.Load(SelectedLibrary)
+function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
+    local SelectedLibrary = maybeSelectedLibrary or selfOrSelectedLibrary or "ui"
+    SelectedLibrary = tostring(SelectedLibrary)
+
     if string.find(string.lower(SelectedLibrary), "ui") then
         ENV.ui = true
 
