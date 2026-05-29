@@ -17,13 +17,28 @@ local ContentService = game:GetService("ContentProvider")
 
 -- / Main Library
 local bungiesLibrary = {}
+bungiesLibrary.__version = "hashui_big_123kb_v8_nilfix"
 local ENV = (getgenv and getgenv()) or _G
 ENV.ui = false
 function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
-    local SelectedLibrary = maybeSelectedLibrary or selfOrSelectedLibrary or "ui"
-    SelectedLibrary = tostring(SelectedLibrary)
+    local SelectedLibrary
 
-    if string.find(string.lower(SelectedLibrary), "ui") then
+    -- Supports Library.Load("ui"), Library:Load("ui"), and safe nil handling.
+    if type(selfOrSelectedLibrary) == "table" then
+        SelectedLibrary = maybeSelectedLibrary
+    else
+        SelectedLibrary = selfOrSelectedLibrary
+    end
+
+    SelectedLibrary = tostring(SelectedLibrary or "")
+    local selectedLower = string.lower(SelectedLibrary)
+
+    if selectedLower == "" then
+        warn("HashUI Load called without a library name; use Library.Load("ui") or Library.Load("notif")")
+        selectedLower = "ui"
+    end
+
+    if string.find(selectedLower, "ui", 1, true) then
         ENV.ui = true
 
         -- Tweening
@@ -2153,7 +2168,7 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
         end
         return Interface
     end
-    if string.find(string.lower(SelectedLibrary), "notif") then
+    if string.find(selectedLower, "notif", 1, true) then
         local notifications = Instance.new("ScreenGui")
         local layout_notifications = Instance.new("UIListLayout")
         local padding_notifications = Instance.new("UIPadding")
