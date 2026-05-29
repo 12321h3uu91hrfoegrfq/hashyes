@@ -49,25 +49,25 @@ local Registry = {
 }
 
 local Theme = {
-    Bg = Color3.fromRGB(18, 18, 20),
-    Bg2 = Color3.fromRGB(23, 23, 26),
-    Bg3 = Color3.fromRGB(28, 28, 33),
-    Bg4 = Color3.fromRGB(35, 35, 42),
-    Bg5 = Color3.fromRGB(42, 42, 50),
+    Bg = Color3.fromRGB(10, 10, 13),
+    Bg2 = Color3.fromRGB(16, 16, 21),
+    Bg3 = Color3.fromRGB(23, 23, 30),
+    Bg4 = Color3.fromRGB(32, 32, 42),
+    Bg5 = Color3.fromRGB(42, 42, 55),
 
-    Top = Color3.fromRGB(15, 15, 17),
-    Stroke = Color3.fromRGB(58, 58, 68),
-    Stroke2 = Color3.fromRGB(44, 44, 52),
+    Top = Color3.fromRGB(8, 8, 11),
+    Stroke = Color3.fromRGB(70, 63, 92),
+    Stroke2 = Color3.fromRGB(45, 42, 58),
 
-    Text = Color3.fromRGB(235, 235, 240),
-    Text2 = Color3.fromRGB(185, 185, 195),
-    Text3 = Color3.fromRGB(135, 135, 148),
-    Text4 = Color3.fromRGB(92, 92, 104),
+    Text = Color3.fromRGB(242, 242, 248),
+    Text2 = Color3.fromRGB(195, 195, 207),
+    Text3 = Color3.fromRGB(142, 142, 158),
+    Text4 = Color3.fromRGB(92, 92, 110),
 
-    Accent = Color3.fromRGB(138, 101, 212),
-    Accent2 = Color3.fromRGB(168, 137, 255),
-    Accent3 = Color3.fromRGB(90, 66, 150),
-    AccentDark = Color3.fromRGB(50, 39, 74),
+    Accent = Color3.fromRGB(154, 105, 255),
+    Accent2 = Color3.fromRGB(198, 170, 255),
+    Accent3 = Color3.fromRGB(105, 68, 190),
+    AccentDark = Color3.fromRGB(55, 38, 95),
 
     Red = Color3.fromRGB(255, 95, 95),
     Green = Color3.fromRGB(120, 235, 170)
@@ -605,7 +605,7 @@ local function createUIFramework()
             Name = "Shadow",
             AnchorPoint = Vector2.new(0.5, 0.5),
             Position = UDim2.fromScale(0.5, 0.515),
-            Size = UDim2.fromOffset(670, 590),
+            Size = UDim2.fromOffset(790, 620),
             BackgroundColor3 = Color3.fromRGB(0, 0, 0),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
@@ -617,14 +617,15 @@ local function createUIFramework()
             Name = "Main",
             AnchorPoint = Vector2.new(0.5, 0.5),
             Position = UDim2.fromScale(0.5, 0.535),
-            Size = UDim2.fromOffset(640, 560),
+            Size = UDim2.fromOffset(760, 590),
             BackgroundColor3 = Theme.Bg,
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             ClipsDescendants = true,
             Parent = gui
         })
-        addCorner(main, 16)
+        addCorner(main, 18)
+        addGradient(main, Color3.fromRGB(14, 14, 18), Color3.fromRGB(9, 9, 12), 90)
         local mainStroke = addStroke(main, Theme.Stroke, 1, 1)
 
         local scale = new("UIScale", {
@@ -654,19 +655,30 @@ local function createUIFramework()
         local header = makeLabel(topbar, {
             Text = tostring(config.Header or "Hash Hub"),
             Font = Enum.Font.GothamMedium,
-            TextSize = 18,
+            TextSize = 20,
             TextColor3 = Theme.Text,
             TextTransparency = 1,
-            Position = UDim2.fromOffset(18, 0),
-            Size = UDim2.new(1, -142, 1, 0)
+            Position = UDim2.fromOffset(22, 0),
+            Size = UDim2.new(1, -160, 1, 0)
         })
+
+        local headerAccent = new("Frame", {
+            Name = "HeaderAccent",
+            Position = UDim2.fromOffset(22, 40),
+            Size = UDim2.fromOffset(0, 2),
+            BackgroundColor3 = Theme.Accent,
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Parent = topbar
+        })
+        addCorner(headerAccent, 99)
 
         local keyText = tostring((config.VisibleKeybind or Enum.KeyCode.RightAlt).Name)
         local keyChip = new("Frame", {
             Name = "KeyChip",
             AnchorPoint = Vector2.new(1, 0.5),
             Position = UDim2.new(1, -16, 0.5, 0),
-            Size = UDim2.fromOffset(math.max(82, getTextWidth(keyText, 11, Enum.Font.GothamMedium) + 26), 26),
+            Size = UDim2.fromOffset(math.max(92, getTextWidth(keyText, 11, Enum.Font.GothamMedium) + 30), 30),
             BackgroundColor3 = Theme.Bg2,
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
@@ -687,14 +699,14 @@ local function createUIFramework()
 
         local tabHolder = new("Frame", {
             Name = "TabHolder",
-            Position = UDim2.fromOffset(14, 66),
-            Size = UDim2.new(1, -28, 0, 42),
-            BackgroundColor3 = Theme.Bg2,
+            Position = UDim2.fromOffset(18, 72),
+            Size = UDim2.new(1, -36, 0, 48),
+            BackgroundColor3 = Color3.fromRGB(20, 20, 24),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
             Parent = main
         })
-        addCorner(tabHolder, 12)
+        addCorner(tabHolder, 14)
         local tabStroke = addStroke(tabHolder, Theme.Stroke2, 1, 1)
         addPadding(tabHolder, 8, 8, 7, 7)
 
@@ -709,8 +721,8 @@ local function createUIFramework()
 
         local pageHolder = new("Frame", {
             Name = "PageHolder",
-            Position = UDim2.fromOffset(14, 118),
-            Size = UDim2.new(1, -28, 1, -160),
+            Position = UDim2.fromOffset(18, 132),
+            Size = UDim2.new(1, -36, 1, -176),
             BackgroundTransparency = 1,
             ClipsDescendants = true,
             Parent = main
@@ -722,8 +734,8 @@ local function createUIFramework()
             TextSize = 12,
             TextColor3 = Theme.Text4,
             TextTransparency = 1,
-            Position = UDim2.new(0, 18, 1, -34),
-            Size = UDim2.new(1, -36, 0, 22)
+            Position = UDim2.new(0, 22, 1, -36),
+            Size = UDim2.new(1, -44, 0, 22)
         })
 
         applyDrag(main, topbar)
@@ -812,7 +824,7 @@ local function createUIFramework()
             for pageObj, tabData in pairs(window._tabs) do
                 tween(tabData.Button, 0.15, {BackgroundTransparency = 1})
                 tween(tabData.Label, 0.15, {TextColor3 = Theme.Text3})
-                tween(tabData.Line, 0.15, {BackgroundTransparency = 1, Size = UDim2.fromOffset(18, 2)})
+                tween(tabData.Line, 0.15, {BackgroundTransparency = 1, Size = UDim2.fromOffset(24, 2)})
             end
 
             page.Frame.Visible = true
@@ -824,7 +836,7 @@ local function createUIFramework()
             if tab then
                 tween(tab.Button, 0.15, {BackgroundTransparency = 0})
                 tween(tab.Label, 0.15, {TextColor3 = Theme.Text})
-                tween(tab.Line, 0.15, {BackgroundTransparency = 0, Size = UDim2.fromOffset(28, 2)})
+                tween(tab.Line, 0.15, {BackgroundTransparency = 0, Size = UDim2.fromOffset(36, 2)})
             end
         end
 
@@ -854,10 +866,10 @@ local function createUIFramework()
                 Sections = {}
             }
 
-            local buttonWidth = math.max(80, getTextWidth(page.Subject, 12, Enum.Font.GothamMedium) + 28)
+            local buttonWidth = math.max(92, getTextWidth(page.Subject, 12, Enum.Font.GothamMedium) + 34)
             local tabButton = new("TextButton", {
                 Name = "Tab_" .. page.Subject,
-                Size = UDim2.fromOffset(buttonWidth, 28),
+                Size = UDim2.fromOffset(buttonWidth + 8, 32),
                 BackgroundColor3 = Theme.Bg3,
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
@@ -880,7 +892,7 @@ local function createUIFramework()
                 Name = "Line",
                 AnchorPoint = Vector2.new(0.5, 1),
                 Position = UDim2.new(0.5, 0, 1, -3),
-                Size = UDim2.fromOffset(18, 2),
+                Size = UDim2.fromOffset(24, 2),
                 BackgroundColor3 = Theme.Accent,
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
@@ -900,7 +912,7 @@ local function createUIFramework()
             local left = new("ScrollingFrame", {
                 Name = "Left",
                 Position = UDim2.fromOffset(0, 0),
-                Size = UDim2.new(0.5, -6, 1, 0),
+                Size = UDim2.new(0.5, -8, 1, 0),
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
                 ScrollBarThickness = 2,
@@ -911,8 +923,8 @@ local function createUIFramework()
 
             local right = new("ScrollingFrame", {
                 Name = "Right",
-                Position = UDim2.new(0.5, 6, 0, 0),
-                Size = UDim2.new(0.5, -6, 1, 0),
+                Position = UDim2.new(0.5, 8, 0, 0),
+                Size = UDim2.new(0.5, -8, 1, 0),
                 BackgroundTransparency = 1,
                 BorderSizePixel = 0,
                 ScrollBarThickness = 2,
@@ -983,12 +995,12 @@ local function createUIFramework()
                 local section = new("Frame", {
                     Name = "Section",
                     Size = UDim2.new(1, -2, 0, 60),
-                    BackgroundColor3 = Theme.Bg2,
+                    BackgroundColor3 = Color3.fromRGB(20, 20, 24),
                     BorderSizePixel = 0,
                     ClipsDescendants = false,
                     Parent = target
                 })
-                addCorner(section, 13)
+                addCorner(section, 15)
                 local sectionStroke = addStroke(section, Theme.Stroke2, 0.42, 1)
 
                 local sectionTop = new("Frame", {
@@ -1005,14 +1017,14 @@ local function createUIFramework()
                     Font = Enum.Font.GothamMedium,
                     TextSize = 13,
                     TextColor3 = Theme.Text,
-                    Position = UDim2.fromOffset(12, 8),
+                    Position = UDim2.fromOffset(14, 11),
                     Size = UDim2.new(1, -24, 0, 18)
                 })
 
                 local body = new("Frame", {
                     Name = "Body",
-                    Position = UDim2.fromOffset(10, 36),
-                    Size = UDim2.new(1, -20, 1, -46),
+                    Position = UDim2.fromOffset(12, 40),
+                    Size = UDim2.new(1, -24, 1, -52),
                     BackgroundTransparency = 1,
                     ClipsDescendants = false,
                     Parent = section
@@ -1025,7 +1037,7 @@ local function createUIFramework()
                 })
 
                 local function updateSection()
-                    section.Size = UDim2.new(1, -2, 0, bodyLayout.AbsoluteContentSize.Y + 48)
+                    section.Size = UDim2.new(1, -2, 0, bodyLayout.AbsoluteContentSize.Y + 56)
                 end
                 updateSection()
                 connect(bodyLayout:GetPropertyChangedSignal("AbsoluteContentSize"), updateSection)
@@ -1914,6 +1926,7 @@ local function createUIFramework()
         tween(topAccent, 0.26, {BackgroundTransparency = 0})
         tween(topbar, 0.26, {BackgroundTransparency = 0})
         tween(header, 0.26, {TextTransparency = 0})
+        if headerAccent then tween(headerAccent, 0.34, {Size = UDim2.fromOffset(82, 2), BackgroundTransparency = 0.05}) end
         tween(keyChip, 0.26, {BackgroundTransparency = 0})
         tween(keyChipStroke, 0.26, {Transparency = 0.45})
         tween(keyLabel, 0.26, {TextTransparency = 0})
