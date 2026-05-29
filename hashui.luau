@@ -2280,5 +2280,4 @@ function bungiesLibrary.Load(SelectedLibrary)
         end
         return NotificationLibrary
     end
-end
 return bungiesLibrary
