@@ -871,67 +871,80 @@ function bungiesLibrary.Load(SelectedLibrary)
                         local selectedValue = tostring(Configuration_Dropdown.Default)
                         local dropdownIsOpen = false
                         local optionButtons = {}
+                        local closedHeight = 64
+                        local buttonHeight = 34
+                        local optionHeight = 30
+                        local maxListHeight = 190
+                        local accent = Color3.fromRGB(150, 116, 255)
+
+                        local function tween(obj, props, time)
+                            TweenService:Create(obj, TweenInfo.new(time or 0.16, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), props):Play()
+                        end
 
                         local holder_dropdown = Instance.new("Frame")
                         local label_dropdown = Instance.new("TextLabel")
                         local design_dropdown = Instance.new("Frame")
+                        local design_corner = Instance.new("UICorner")
+                        local design_stroke = Instance.new("UIStroke")
                         local button_dropdown = Instance.new("TextButton")
                         local button_dropdown_text = Instance.new("TextLabel")
                         local button_dropdown_arrow = Instance.new("ImageLabel")
                         local dropdown_container = Instance.new("ScrollingFrame")
+                        local dropdown_corner = Instance.new("UICorner")
                         local layout_dropdown_container = Instance.new("UIListLayout")
                         local padding_dropdown_container = Instance.new("UIPadding")
                         local gradient_button_dropdown = Instance.new("UIGradient")
-                        local gradient_design_dropdown = Instance.new("UIGradient")
 
                         holder_dropdown.Name = "holder_dropdown"
                         holder_dropdown.Parent = section
                         holder_dropdown.BackgroundTransparency = 1
-                        holder_dropdown.Size = UDim2.new(0, 221, 0, 38)
-                        holder_dropdown.ZIndex = 20
+                        holder_dropdown.Size = UDim2.new(0, 221, 0, closedHeight)
+                        holder_dropdown.ClipsDescendants = false
+                        holder_dropdown.ZIndex = 80
 
                         label_dropdown.Name = "label_dropdown"
                         label_dropdown.Parent = holder_dropdown
                         label_dropdown.BackgroundTransparency = 1
-                        label_dropdown.Position = UDim2.new(0, 0, 0, 0)
-                        label_dropdown.Size = UDim2.new(0, 221, 0, 15)
-                        label_dropdown.Font = Enum.Font.Jura
+                        label_dropdown.Position = UDim2.new(0, 1, 0, 0)
+                        label_dropdown.Size = UDim2.new(1, -2, 0, 20)
+                        label_dropdown.Font = Enum.Font.GothamSemibold
                         label_dropdown.Text = Configuration_Dropdown.Text
-                        label_dropdown.TextColor3 = Color3.fromRGB(225, 225, 225)
-                        label_dropdown.TextSize = 13
-                        label_dropdown.TextStrokeColor3 = Color3.fromRGB(15, 15, 15)
-                        label_dropdown.TextStrokeTransparency = 0.35
+                        label_dropdown.TextColor3 = Color3.fromRGB(245, 245, 248)
+                        label_dropdown.TextSize = 12
+                        label_dropdown.TextStrokeTransparency = 1
                         label_dropdown.TextXAlignment = Enum.TextXAlignment.Left
+                        label_dropdown.ZIndex = 81
 
                         design_dropdown.Name = "design_dropdown"
                         design_dropdown.Parent = holder_dropdown
-                        design_dropdown.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-                        design_dropdown.BorderColor3 = Color3.fromRGB(65, 65, 65)
+                        design_dropdown.BackgroundColor3 = Color3.fromRGB(24, 24, 27)
+                        design_dropdown.BorderSizePixel = 0
                         design_dropdown.ClipsDescendants = true
-                        design_dropdown.Position = UDim2.new(0, 0, 0, 18)
-                        design_dropdown.Size = UDim2.new(0, 221, 0, 18)
-                        design_dropdown.ZIndex = 21
+                        design_dropdown.Position = UDim2.new(0, 0, 0, 24)
+                        design_dropdown.Size = UDim2.new(0, 221, 0, buttonHeight)
+                        design_dropdown.ZIndex = 82
 
-                        gradient_design_dropdown.Color = ColorSequence.new({
-                            ColorSequenceKeypoint.new(0, Color3.fromRGB(36, 36, 36)),
-                            ColorSequenceKeypoint.new(1, Color3.fromRGB(27, 27, 27))
-                        })
-                        gradient_design_dropdown.Rotation = 90
-                        gradient_design_dropdown.Parent = design_dropdown
+                        design_corner.CornerRadius = UDim.new(0, 8)
+                        design_corner.Parent = design_dropdown
+
+                        design_stroke.Color = Color3.fromRGB(68, 60, 88)
+                        design_stroke.Thickness = 1
+                        design_stroke.Transparency = 0.05
+                        design_stroke.Parent = design_dropdown
 
                         button_dropdown.Name = "button_dropdown"
                         button_dropdown.Parent = design_dropdown
                         button_dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         button_dropdown.BorderSizePixel = 0
-                        button_dropdown.Size = UDim2.new(0, 219, 0, 16)
-                        button_dropdown.Position = UDim2.new(0, 1, 0, 1)
+                        button_dropdown.Position = UDim2.new(0, 0, 0, 0)
+                        button_dropdown.Size = UDim2.new(1, 0, 0, buttonHeight)
                         button_dropdown.AutoButtonColor = false
                         button_dropdown.Text = ""
-                        button_dropdown.ZIndex = 22
+                        button_dropdown.ZIndex = 83
 
                         gradient_button_dropdown.Color = ColorSequence.new({
-                            ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 28, 28)),
-                            ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 22, 22))
+                            ColorSequenceKeypoint.new(0, Color3.fromRGB(43, 38, 58)),
+                            ColorSequenceKeypoint.new(1, Color3.fromRGB(27, 27, 34))
                         })
                         gradient_button_dropdown.Rotation = 90
                         gradient_button_dropdown.Parent = button_dropdown
@@ -939,92 +952,95 @@ function bungiesLibrary.Load(SelectedLibrary)
                         button_dropdown_text.Name = "button_dropdown_text"
                         button_dropdown_text.Parent = button_dropdown
                         button_dropdown_text.BackgroundTransparency = 1
-                        button_dropdown_text.Position = UDim2.new(0, 7, 0, 0)
-                        button_dropdown_text.Size = UDim2.new(1, -28, 1, 0)
-                        button_dropdown_text.Font = Enum.Font.Jura
+                        button_dropdown_text.Position = UDim2.new(0, 12, 0, 0)
+                        button_dropdown_text.Size = UDim2.new(1, -42, 1, 0)
+                        button_dropdown_text.Font = Enum.Font.Gotham
                         button_dropdown_text.Text = selectedValue
-                        button_dropdown_text.TextColor3 = Color3.fromRGB(220, 220, 220)
-                        button_dropdown_text.TextSize = 12
-                        button_dropdown_text.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
-                        button_dropdown_text.TextStrokeTransparency = 0.35
+                        button_dropdown_text.TextColor3 = Color3.fromRGB(225, 225, 228)
+                        button_dropdown_text.TextSize = 13
+                        button_dropdown_text.TextStrokeTransparency = 1
                         button_dropdown_text.TextXAlignment = Enum.TextXAlignment.Left
                         button_dropdown_text.TextTruncate = Enum.TextTruncate.AtEnd
-                        button_dropdown_text.ZIndex = 23
+                        button_dropdown_text.ZIndex = 84
 
                         button_dropdown_arrow.Name = "button_dropdown_arrow"
                         button_dropdown_arrow.Parent = button_dropdown
                         button_dropdown_arrow.BackgroundTransparency = 1
-                        button_dropdown_arrow.Position = UDim2.new(1, -18, 0.5, -7)
-                        button_dropdown_arrow.Size = UDim2.new(0, 14, 0, 14)
+                        button_dropdown_arrow.Position = UDim2.new(1, -28, 0.5, -8)
+                        button_dropdown_arrow.Size = UDim2.new(0, 16, 0, 16)
                         button_dropdown_arrow.Image = "rbxassetid://3926307971"
                         button_dropdown_arrow.ImageRectOffset = Vector2.new(324, 524)
                         button_dropdown_arrow.ImageRectSize = Vector2.new(36, 36)
+                        button_dropdown_arrow.ImageColor3 = Color3.fromRGB(170, 170, 176)
                         button_dropdown_arrow.ScaleType = Enum.ScaleType.Fit
-                        button_dropdown_arrow.ZIndex = 23
+                        button_dropdown_arrow.ZIndex = 84
 
                         dropdown_container.Name = "dropdown_container"
                         dropdown_container.Parent = design_dropdown
-                        dropdown_container.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
+                        dropdown_container.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
                         dropdown_container.BorderSizePixel = 0
-                        dropdown_container.Position = UDim2.new(0, 1, 0, 18)
-                        dropdown_container.Size = UDim2.new(0, 219, 0, 0)
+                        dropdown_container.Position = UDim2.new(0, 6, 0, buttonHeight + 6)
+                        dropdown_container.Size = UDim2.new(1, -12, 0, 0)
                         dropdown_container.CanvasSize = UDim2.new(0, 0, 0, 0)
-                        dropdown_container.ScrollBarThickness = 2
-                        dropdown_container.ScrollBarImageColor3 = Color3.fromRGB(111, 83, 177)
+                        dropdown_container.ScrollBarThickness = 3
+                        dropdown_container.ScrollBarImageColor3 = accent
+                        dropdown_container.ScrollingDirection = Enum.ScrollingDirection.Y
                         dropdown_container.ClipsDescendants = true
-                        dropdown_container.ZIndex = 22
+                        dropdown_container.ZIndex = 84
+
+                        dropdown_corner.CornerRadius = UDim.new(0, 7)
+                        dropdown_corner.Parent = dropdown_container
 
                         layout_dropdown_container.Name = "layout_dropdown_container"
                         layout_dropdown_container.Parent = dropdown_container
                         layout_dropdown_container.SortOrder = Enum.SortOrder.LayoutOrder
-                        layout_dropdown_container.Padding = UDim.new(0, 2)
+                        layout_dropdown_container.Padding = UDim.new(0, 5)
 
                         padding_dropdown_container.Name = "padding_dropdown_container"
                         padding_dropdown_container.Parent = dropdown_container
-                        padding_dropdown_container.PaddingTop = UDim.new(0, 3)
-                        padding_dropdown_container.PaddingBottom = UDim.new(0, 3)
-                        padding_dropdown_container.PaddingLeft = UDim.new(0, 3)
-                        padding_dropdown_container.PaddingRight = UDim.new(0, 3)
+                        padding_dropdown_container.PaddingTop = UDim.new(0, 6)
+                        padding_dropdown_container.PaddingBottom = UDim.new(0, 6)
+                        padding_dropdown_container.PaddingLeft = UDim.new(0, 6)
+                        padding_dropdown_container.PaddingRight = UDim.new(0, 6)
 
-                        local function getDropHeight()
-                            local content = layout_dropdown_container.AbsoluteContentSize.Y + 8
-                            return math.clamp(content, 0, 116)
+                        local function getListHeight()
+                            local content = layout_dropdown_container.AbsoluteContentSize.Y + 12
+                            return math.clamp(content, 0, maxListHeight)
+                        end
+
+                        local function refreshCanvas()
+                            local content = layout_dropdown_container.AbsoluteContentSize.Y + 12
+                            dropdown_container.CanvasSize = UDim2.new(0, 0, 0, content)
                         end
 
                         local function resizeDropdown(open)
-                            local dropHeight = open and getDropHeight() or 0
-                            local holderHeight = open and (38 + dropHeight) or 38
-                            TweenService:Create(design_dropdown, TweenInfo.new(0.14, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                                Size = UDim2.new(0, 221, 0, 18 + dropHeight)
-                            }):Play()
-                            TweenService:Create(dropdown_container, TweenInfo.new(0.14, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                                Size = UDim2.new(0, 219, 0, dropHeight)
-                            }):Play()
-                            TweenService:Create(button_dropdown_arrow, TweenInfo.new(0.14, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                                Rotation = open and 180 or 0
-                            }):Play()
-                            holder_dropdown.Size = UDim2.new(0, 221, 0, holderHeight)
+                            refreshCanvas()
+                            local listHeight = open and getListHeight() or 0
+                            local openExtra = open and (listHeight + 12) or 0
+                            holder_dropdown.Size = UDim2.new(0, 221, 0, closedHeight + openExtra)
+                            tween(design_dropdown, {Size = UDim2.new(0, 221, 0, buttonHeight + openExtra)}, 0.18)
+                            tween(dropdown_container, {Size = UDim2.new(1, -12, 0, listHeight)}, 0.18)
+                            tween(button_dropdown_arrow, {Rotation = open and 180 or 0}, 0.16)
                             updateSection()
                             updateSize()
                         end
 
-                        local function refreshCanvas()
-                            local content = layout_dropdown_container.AbsoluteContentSize.Y + 8
-                            dropdown_container.CanvasSize = UDim2.new(0, 0, 0, content)
-                            if dropdownIsOpen then
-                                resizeDropdown(true)
+                        local function updateSelectedColors()
+                            for _, btn in next, optionButtons do
+                                local txt = btn:FindFirstChild("option_text")
+                                local bar = btn:FindFirstChild("selected_bar")
+                                if txt then
+                                    local isSelected = txt.Text == selectedValue
+                                    txt.TextColor3 = isSelected and Color3.fromRGB(235, 225, 255) or Color3.fromRGB(205, 205, 210)
+                                    if bar then bar.BackgroundTransparency = isSelected and 0 or 1 end
+                                end
                             end
                         end
 
                         local function selectOption(optionText)
                             selectedValue = tostring(optionText)
                             button_dropdown_text.Text = selectedValue
-                            for _, btn in next, optionButtons do
-                                local txt = btn:FindFirstChild("option_text")
-                                if txt then
-                                    txt.TextColor3 = (txt.Text == selectedValue) and Color3.fromRGB(145, 115, 220) or Color3.fromRGB(205, 205, 205)
-                                end
-                            end
+                            updateSelectedColors()
                             dropdownIsOpen = false
                             resizeDropdown(false)
                             pcall(Configuration_Dropdown.Script, selectedValue)
@@ -1032,77 +1048,97 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         local function makeOption(option)
                             option = tostring(option)
-                            local button_dropdown_option = Instance.new("TextButton")
-                            local option_text = Instance.new("TextLabel")
-                            local option_gradient = Instance.new("UIGradient")
+                            local optionButton = Instance.new("TextButton")
+                            local optionCorner = Instance.new("UICorner")
+                            local optionGradient = Instance.new("UIGradient")
+                            local optionText = Instance.new("TextLabel")
+                            local selectedBar = Instance.new("Frame")
+                            local selectedCorner = Instance.new("UICorner")
 
-                            button_dropdown_option.Name = "button_dropdown_option"
-                            button_dropdown_option.Parent = dropdown_container
-                            button_dropdown_option.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                            button_dropdown_option.BorderSizePixel = 0
-                            button_dropdown_option.Size = UDim2.new(1, -6, 0, 17)
-                            button_dropdown_option.AutoButtonColor = false
-                            button_dropdown_option.Text = ""
-                            button_dropdown_option.ZIndex = 23
+                            optionButton.Name = "button_dropdown_option"
+                            optionButton.Parent = dropdown_container
+                            optionButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                            optionButton.BorderSizePixel = 0
+                            optionButton.Size = UDim2.new(1, -2, 0, optionHeight)
+                            optionButton.AutoButtonColor = false
+                            optionButton.Text = ""
+                            optionButton.ZIndex = 85
 
-                            option_gradient.Color = ColorSequence.new({
-                                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 30)),
-                                ColorSequenceKeypoint.new(1, Color3.fromRGB(23, 23, 23))
+                            optionCorner.CornerRadius = UDim.new(0, 7)
+                            optionCorner.Parent = optionButton
+
+                            optionGradient.Color = ColorSequence.new({
+                                ColorSequenceKeypoint.new(0, Color3.fromRGB(34, 34, 43)),
+                                ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 32))
                             })
-                            option_gradient.Rotation = 90
-                            option_gradient.Parent = button_dropdown_option
+                            optionGradient.Rotation = 90
+                            optionGradient.Parent = optionButton
 
-                            option_text.Name = "option_text"
-                            option_text.Parent = button_dropdown_option
-                            option_text.BackgroundTransparency = 1
-                            option_text.Size = UDim2.new(1, -10, 1, 0)
-                            option_text.Position = UDim2.new(0, 5, 0, 0)
-                            option_text.Font = Enum.Font.Jura
-                            option_text.Text = option
-                            option_text.TextColor3 = (option == selectedValue) and Color3.fromRGB(145, 115, 220) or Color3.fromRGB(205, 205, 205)
-                            option_text.TextSize = 12
-                            option_text.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
-                            option_text.TextStrokeTransparency = 0.35
-                            option_text.TextXAlignment = Enum.TextXAlignment.Left
-                            option_text.TextTruncate = Enum.TextTruncate.AtEnd
-                            option_text.ZIndex = 24
+                            selectedBar.Name = "selected_bar"
+                            selectedBar.Parent = optionButton
+                            selectedBar.BackgroundColor3 = accent
+                            selectedBar.BorderSizePixel = 0
+                            selectedBar.Position = UDim2.new(0, 0, 0.5, -10)
+                            selectedBar.Size = UDim2.new(0, 4, 0, 20)
+                            selectedBar.BackgroundTransparency = (option == selectedValue) and 0 or 1
+                            selectedBar.ZIndex = 86
 
-                            button_dropdown_option.MouseEnter:Connect(function()
-                                option_gradient.Color = ColorSequence.new({
-                                    ColorSequenceKeypoint.new(0, Color3.fromRGB(52, 42, 76)),
-                                    ColorSequenceKeypoint.new(1, Color3.fromRGB(37, 31, 52))
+                            selectedCorner.CornerRadius = UDim.new(1, 0)
+                            selectedCorner.Parent = selectedBar
+
+                            optionText.Name = "option_text"
+                            optionText.Parent = optionButton
+                            optionText.BackgroundTransparency = 1
+                            optionText.Position = UDim2.new(0, 14, 0, 0)
+                            optionText.Size = UDim2.new(1, -20, 1, 0)
+                            optionText.Font = Enum.Font.Gotham
+                            optionText.Text = option
+                            optionText.TextColor3 = (option == selectedValue) and Color3.fromRGB(235, 225, 255) or Color3.fromRGB(205, 205, 210)
+                            optionText.TextSize = 13
+                            optionText.TextStrokeTransparency = 1
+                            optionText.TextXAlignment = Enum.TextXAlignment.Left
+                            optionText.TextTruncate = Enum.TextTruncate.AtEnd
+                            optionText.ZIndex = 86
+
+                            optionButton.MouseEnter:Connect(function()
+                                optionGradient.Color = ColorSequence.new({
+                                    ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 55, 105)),
+                                    ColorSequenceKeypoint.new(1, Color3.fromRGB(42, 35, 58))
                                 })
                             end)
-                            button_dropdown_option.MouseLeave:Connect(function()
-                                option_gradient.Color = ColorSequence.new({
-                                    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 30)),
-                                    ColorSequenceKeypoint.new(1, Color3.fromRGB(23, 23, 23))
+                            optionButton.MouseLeave:Connect(function()
+                                optionGradient.Color = ColorSequence.new({
+                                    ColorSequenceKeypoint.new(0, Color3.fromRGB(27, 27, 32)),
+                                    ColorSequenceKeypoint.new(1, Color3.fromRGB(23, 23, 27))
                                 })
                             end)
-                            button_dropdown_option.MouseButton1Click:Connect(function()
+                            optionButton.MouseButton1Click:Connect(function()
                                 selectOption(option)
                             end)
 
-                            table.insert(optionButtons, button_dropdown_option)
+                            table.insert(optionButtons, optionButton)
                             refreshCanvas()
-                            return button_dropdown_option
+                            return optionButton
                         end
 
-                        button_dropdown.MouseButton1Click:Connect(function()
-                            dropdownIsOpen = not dropdownIsOpen
-                            resizeDropdown(dropdownIsOpen)
-                        end)
                         button_dropdown.MouseEnter:Connect(function()
+                            design_stroke.Color = accent
                             gradient_button_dropdown.Color = ColorSequence.new({
-                                ColorSequenceKeypoint.new(0, Color3.fromRGB(132, 100, 213)),
-                                ColorSequenceKeypoint.new(1, Color3.fromRGB(93, 71, 152))
+                                ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 35, 52)),
+                                ColorSequenceKeypoint.new(1, Color3.fromRGB(29, 27, 35))
                             })
                         end)
                         button_dropdown.MouseLeave:Connect(function()
+                            design_stroke.Color = dropdownIsOpen and accent or Color3.fromRGB(55, 55, 62)
                             gradient_button_dropdown.Color = ColorSequence.new({
-                                ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 28, 28)),
-                                ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 22, 22))
+                                ColorSequenceKeypoint.new(0, Color3.fromRGB(34, 34, 39)),
+                                ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 29))
                             })
+                        end)
+                        button_dropdown.MouseButton1Click:Connect(function()
+                            dropdownIsOpen = not dropdownIsOpen
+                            design_stroke.Color = dropdownIsOpen and accent or Color3.fromRGB(55, 55, 62)
+                            resizeDropdown(dropdownIsOpen)
                         end)
 
                         for _, option in next, Options do
@@ -1126,6 +1162,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                         function DropdownTools.AddOption(option)
                             table.insert(Configuration_Dropdown.Options, option)
                             makeOption(option)
+                            if dropdownIsOpen then resizeDropdown(true) end
                         end
                         function DropdownTools.RemoveOption(option)
                             option = tostring(option)
@@ -1143,8 +1180,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                                 end
                             end
                             refreshCanvas()
-                            updateSection()
-                            updateSize()
+                            resizeDropdown(dropdownIsOpen)
                         end
                         function DropdownTools.ClearOptions()
                             for _, btn in next, optionButtons do
@@ -1153,8 +1189,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                             optionButtons = {}
                             Configuration_Dropdown.Options = {}
                             refreshCanvas()
-                            updateSection()
-                            updateSize()
+                            resizeDropdown(dropdownIsOpen)
                         end
                         return DropdownTools
                     end
