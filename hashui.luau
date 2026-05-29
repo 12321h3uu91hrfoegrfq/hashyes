@@ -17,7 +17,7 @@ local ContentService = game:GetService("ContentProvider")
 
 -- / Main Library
 local bungiesLibrary = {}
-bungiesLibrary.__version = "hashui_big_123kb_v9_compilefix"
+bungiesLibrary.__version = "hashui_big_123kb_v10_notiffix"
 local ENV = (getgenv and getgenv()) or _G
 ENV.ui = false
 function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
@@ -2168,7 +2168,8 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
         end
         return Interface
     end
-    if string.find(selectedLower, "notif", 1, true) then
+    local selectedLowerSafe = string.lower(tostring(selectedLower or SelectedLibrary or ""))
+    if string.find(selectedLowerSafe, "notif", 1, true) then
         local notifications = Instance.new("ScreenGui")
         local layout_notifications = Instance.new("UIListLayout")
         local padding_notifications = Instance.new("UIPadding")
