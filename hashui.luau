@@ -17,10 +17,11 @@ local ContentService = game:GetService("ContentProvider")
 
 -- / Main Library
 local bungiesLibrary = {}
-getgenv().ui = false
+local ENV = (getgenv and getgenv()) or _G
+ENV.ui = false
 function bungiesLibrary.Load(SelectedLibrary)
     if string.find(string.lower(SelectedLibrary), "ui") then
-        ui = true
+        ENV.ui = true
 
         -- Tweening
         local TweenAmount = 1
@@ -156,7 +157,7 @@ function bungiesLibrary.Load(SelectedLibrary)
         -- Window function
         local Interface = {}
         function Interface:Start(Configuration)
-            ui = true
+            ENV.ui = true
             Configuration = {
                 Header = Configuration.Header or "undefined header",
                 Footer = Configuration.Footer or
@@ -474,7 +475,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                             end
                         end
                         for i, v in next, container_tab_buttons:GetChildren() do
-                            if v:isA("TextButton") then
+                            if v:IsA("TextButton") then
                                 v.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
                                 v.BackgroundTransparency = 0.4
                                 v.TextColor3 = Color3.fromRGB(180, 180, 180)
@@ -858,468 +859,300 @@ function bungiesLibrary.Load(SelectedLibrary)
                         return ToggleTools
                     end
                     function SectionTools:CreateDropdown(Configuration_Dropdown)
+                        Configuration_Dropdown = Configuration_Dropdown or {}
+                        local Options = Configuration_Dropdown.Options or {}
                         Configuration_Dropdown = {
                             Text = Configuration_Dropdown.Text or "dropdown",
                             Default = Configuration_Dropdown.Default or ". . .",
-                            Options = Configuration_Dropdown.Options or {},
-                            Script = Configuration_Dropdown.Script or function()
-                                    print("dropdown")
-                                end
+                            Options = Options,
+                            Script = Configuration_Dropdown.Script or function() end
                         }
 
+                        local selectedValue = tostring(Configuration_Dropdown.Default)
+                        local dropdownIsOpen = false
+                        local optionButtons = {}
+
                         local holder_dropdown = Instance.new("Frame")
-                        local layout_holder_dropdown = Instance.new("UIListLayout")
                         local label_dropdown = Instance.new("TextLabel")
                         local design_dropdown = Instance.new("Frame")
-                        local layout_design_dropdown = Instance.new("UIListLayout")
                         local button_dropdown = Instance.new("TextButton")
-                        local layout_button_dropdown = Instance.new("UIListLayout")
                         local button_dropdown_text = Instance.new("TextLabel")
-                        local gradient_button_dropdown = Instance.new("UIGradient")
                         local button_dropdown_arrow = Instance.new("ImageLabel")
-                        local gradient_button_dropdown_arrow = Instance.new("UIGradient")
-                        local gradient_design_dropdown = Instance.new("UIGradient")
-                        local padding_design_dropdown = Instance.new("UIPadding")
-                        local dropdown_container = Instance.new("Frame")
+                        local dropdown_container = Instance.new("ScrollingFrame")
                         local layout_dropdown_container = Instance.new("UIListLayout")
+                        local padding_dropdown_container = Instance.new("UIPadding")
+                        local gradient_button_dropdown = Instance.new("UIGradient")
+                        local gradient_design_dropdown = Instance.new("UIGradient")
 
                         holder_dropdown.Name = "holder_dropdown"
                         holder_dropdown.Parent = section
-                        holder_dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        holder_dropdown.BackgroundTransparency = 1.000
-                        holder_dropdown.Position = UDim2.new(0.0317796618, 0, 0.0733137801, 0)
-                        holder_dropdown.Size = UDim2.new(0, 221, 0, 34)
-                        holder_dropdown.ZIndex = 3
-
-                        layout_holder_dropdown.Name = "layout_holder_dropdown"
-                        layout_holder_dropdown.Parent = holder_dropdown
-                        layout_holder_dropdown.SortOrder = Enum.SortOrder.LayoutOrder
-                        layout_holder_dropdown.Padding = UDim.new(0, 2)
+                        holder_dropdown.BackgroundTransparency = 1
+                        holder_dropdown.Size = UDim2.new(0, 221, 0, 38)
+                        holder_dropdown.ZIndex = 20
 
                         label_dropdown.Name = "label_dropdown"
                         label_dropdown.Parent = holder_dropdown
-                        label_dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        label_dropdown.BackgroundTransparency = 1.000
-                        label_dropdown.Position = UDim2.new(0, 0, 0.615384638, 0)
-                        label_dropdown.Size = UDim2.new(0, 223, 0, 14)
+                        label_dropdown.BackgroundTransparency = 1
+                        label_dropdown.Position = UDim2.new(0, 0, 0, 0)
+                        label_dropdown.Size = UDim2.new(0, 221, 0, 15)
                         label_dropdown.Font = Enum.Font.Jura
                         label_dropdown.Text = Configuration_Dropdown.Text
                         label_dropdown.TextColor3 = Color3.fromRGB(225, 225, 225)
-                        label_dropdown.TextSize = 13.000
+                        label_dropdown.TextSize = 13
                         label_dropdown.TextStrokeColor3 = Color3.fromRGB(15, 15, 15)
-                        label_dropdown.TextStrokeTransparency = 0.300
+                        label_dropdown.TextStrokeTransparency = 0.35
                         label_dropdown.TextXAlignment = Enum.TextXAlignment.Left
 
                         design_dropdown.Name = "design_dropdown"
                         design_dropdown.Parent = holder_dropdown
-                        design_dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        design_dropdown.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_dropdown.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+                        design_dropdown.BorderColor3 = Color3.fromRGB(65, 65, 65)
                         design_dropdown.ClipsDescendants = true
-                        design_dropdown.Position = UDim2.new(0.0317796618, 0, 0.0733137801, 0)
-                        design_dropdown.Size = UDim2.new(0, 221, 0, 16)
+                        design_dropdown.Position = UDim2.new(0, 0, 0, 18)
+                        design_dropdown.Size = UDim2.new(0, 221, 0, 18)
+                        design_dropdown.ZIndex = 21
 
-                        layout_design_dropdown.Name = "layout_design_dropdown"
-                        layout_design_dropdown.Parent = design_dropdown
-                        layout_design_dropdown.HorizontalAlignment = Enum.HorizontalAlignment.Center
-                        layout_design_dropdown.SortOrder = Enum.SortOrder.LayoutOrder
-                        layout_design_dropdown.Padding = UDim.new(0, 1)
+                        gradient_design_dropdown.Color = ColorSequence.new({
+                            ColorSequenceKeypoint.new(0, Color3.fromRGB(36, 36, 36)),
+                            ColorSequenceKeypoint.new(1, Color3.fromRGB(27, 27, 27))
+                        })
+                        gradient_design_dropdown.Rotation = 90
+                        gradient_design_dropdown.Parent = design_dropdown
 
                         button_dropdown.Name = "button_dropdown"
                         button_dropdown.Parent = design_dropdown
                         button_dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                         button_dropdown.BorderSizePixel = 0
-                        button_dropdown.Size = UDim2.new(0, 219, 0, 14)
+                        button_dropdown.Size = UDim2.new(0, 219, 0, 16)
+                        button_dropdown.Position = UDim2.new(0, 1, 0, 1)
                         button_dropdown.AutoButtonColor = false
-                        button_dropdown.Font = Enum.Font.Jura
-                        button_dropdown.LineHeight = 1.100
                         button_dropdown.Text = ""
-                        button_dropdown.TextColor3 = Color3.fromRGB(225, 225, 225)
-                        button_dropdown.TextSize = 14.000
+                        button_dropdown.ZIndex = 22
 
-                        layout_button_dropdown.Name = "layout_button_dropdown"
-                        layout_button_dropdown.Parent = button_dropdown
-                        layout_button_dropdown.FillDirection = Enum.FillDirection.Horizontal
-                        layout_button_dropdown.SortOrder = Enum.SortOrder.LayoutOrder
-                        layout_button_dropdown.VerticalAlignment = Enum.VerticalAlignment.Center
+                        gradient_button_dropdown.Color = ColorSequence.new({
+                            ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 28, 28)),
+                            ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 22, 22))
+                        })
+                        gradient_button_dropdown.Rotation = 90
+                        gradient_button_dropdown.Parent = button_dropdown
 
                         button_dropdown_text.Name = "button_dropdown_text"
                         button_dropdown_text.Parent = button_dropdown
-                        button_dropdown_text.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        button_dropdown_text.BackgroundTransparency = 1.000
-                        button_dropdown_text.Size = UDim2.new(0, 202, 0, 14)
+                        button_dropdown_text.BackgroundTransparency = 1
+                        button_dropdown_text.Position = UDim2.new(0, 7, 0, 0)
+                        button_dropdown_text.Size = UDim2.new(1, -28, 1, 0)
                         button_dropdown_text.Font = Enum.Font.Jura
-                        button_dropdown_text.LineHeight = 1.200
-                        button_dropdown_text.Text = "  " .. Configuration_Dropdown.Default
+                        button_dropdown_text.Text = selectedValue
                         button_dropdown_text.TextColor3 = Color3.fromRGB(220, 220, 220)
-                        button_dropdown_text.TextSize = 12.000
+                        button_dropdown_text.TextSize = 12
                         button_dropdown_text.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
-                        button_dropdown_text.TextStrokeTransparency = 0.300
+                        button_dropdown_text.TextStrokeTransparency = 0.35
                         button_dropdown_text.TextXAlignment = Enum.TextXAlignment.Left
-
-                        gradient_button_dropdown.Color =
-                            ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
-                        }
-                        gradient_button_dropdown.Rotation = 90
-                        gradient_button_dropdown.Name = "gradient_button_dropdown"
-                        gradient_button_dropdown.Parent = button_dropdown
+                        button_dropdown_text.TextTruncate = Enum.TextTruncate.AtEnd
+                        button_dropdown_text.ZIndex = 23
 
                         button_dropdown_arrow.Name = "button_dropdown_arrow"
                         button_dropdown_arrow.Parent = button_dropdown
-                        button_dropdown_arrow.Active = false
-                        button_dropdown_arrow.BackgroundTransparency = 1.000
-                        button_dropdown_arrow.LayoutOrder = 6
-                        button_dropdown_arrow.Position = UDim2.new(0.844748855, 0, -0.392857134, 0)
+                        button_dropdown_arrow.BackgroundTransparency = 1
+                        button_dropdown_arrow.Position = UDim2.new(1, -18, 0.5, -7)
                         button_dropdown_arrow.Size = UDim2.new(0, 14, 0, 14)
-                        button_dropdown_arrow.ZIndex = 1
                         button_dropdown_arrow.Image = "rbxassetid://3926307971"
                         button_dropdown_arrow.ImageRectOffset = Vector2.new(324, 524)
                         button_dropdown_arrow.ImageRectSize = Vector2.new(36, 36)
                         button_dropdown_arrow.ScaleType = Enum.ScaleType.Fit
-
-                        gradient_button_dropdown_arrow.Color =
-                            ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(167, 167, 167)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(127, 127, 127))
-                        }
-                        gradient_button_dropdown_arrow.Rotation = 90
-                        gradient_button_dropdown_arrow.Name = "gradient_button_dropdown_arrow"
-                        gradient_button_dropdown_arrow.Parent = button_dropdown_arrow
-
-                        gradient_design_dropdown.Color =
-                            ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
-                        }
-                        gradient_design_dropdown.Rotation = 90
-                        gradient_design_dropdown.Name = "gradient_design_dropdown"
-                        gradient_design_dropdown.Parent = design_dropdown
-
-                        padding_design_dropdown.Name = "padding_design_dropdown"
-                        padding_design_dropdown.Parent = design_dropdown
-                        padding_design_dropdown.PaddingTop = UDim.new(0, 1)
+                        button_dropdown_arrow.ZIndex = 23
 
                         dropdown_container.Name = "dropdown_container"
                         dropdown_container.Parent = design_dropdown
-                        dropdown_container.BackgroundColor3 = Color3.fromRGB(29, 29, 29)
-                        dropdown_container.BackgroundTransparency = 0
+                        dropdown_container.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
                         dropdown_container.BorderSizePixel = 0
-                        dropdown_container.Position = UDim2.new(0.00452488707, 0, 1, 0)
+                        dropdown_container.Position = UDim2.new(0, 1, 0, 18)
                         dropdown_container.Size = UDim2.new(0, 219, 0, 0)
-                        dropdown_container.ZIndex = 4
+                        dropdown_container.CanvasSize = UDim2.new(0, 0, 0, 0)
+                        dropdown_container.ScrollBarThickness = 2
+                        dropdown_container.ScrollBarImageColor3 = Color3.fromRGB(111, 83, 177)
+                        dropdown_container.ClipsDescendants = true
+                        dropdown_container.ZIndex = 22
 
                         layout_dropdown_container.Name = "layout_dropdown_container"
                         layout_dropdown_container.Parent = dropdown_container
-                        layout_dropdown_container.HorizontalAlignment = Enum.HorizontalAlignment.Center
                         layout_dropdown_container.SortOrder = Enum.SortOrder.LayoutOrder
                         layout_dropdown_container.Padding = UDim.new(0, 2)
 
-                        local function updateDropdown()
-                            local csD = layout_dropdown_container.AbsoluteContentSize.Y
-                            dropdown_container.Size = UDim2.new(0, 129, 0, csD + 1)
+                        padding_dropdown_container.Name = "padding_dropdown_container"
+                        padding_dropdown_container.Parent = dropdown_container
+                        padding_dropdown_container.PaddingTop = UDim.new(0, 3)
+                        padding_dropdown_container.PaddingBottom = UDim.new(0, 3)
+                        padding_dropdown_container.PaddingLeft = UDim.new(0, 3)
+                        padding_dropdown_container.PaddingRight = UDim.new(0, 3)
+
+                        local function getDropHeight()
+                            local content = layout_dropdown_container.AbsoluteContentSize.Y + 8
+                            return math.clamp(content, 0, 116)
                         end
 
-                        local dropdownIsOpen = false
-                        button_dropdown.MouseButton1Click:Connect(
-                            function()
-                                dropdownIsOpen = not dropdownIsOpen
-                                local designSize =
-                                    dropdownIsOpen and UDim2.new(0, 221, 0, dropdown_container.Size.Y.Offset + 16) or
-                                    UDim2.new(0, 221, 0, 16)
-                                design_dropdown.Size = designSize
-                                updateDropdown()
-                            end
-                        )
+                        local function resizeDropdown(open)
+                            local dropHeight = open and getDropHeight() or 0
+                            local holderHeight = open and (38 + dropHeight) or 38
+                            TweenService:Create(design_dropdown, TweenInfo.new(0.14, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                                Size = UDim2.new(0, 221, 0, 18 + dropHeight)
+                            }):Play()
+                            TweenService:Create(dropdown_container, TweenInfo.new(0.14, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                                Size = UDim2.new(0, 219, 0, dropHeight)
+                            }):Play()
+                            TweenService:Create(button_dropdown_arrow, TweenInfo.new(0.14, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                                Rotation = open and 180 or 0
+                            }):Play()
+                            holder_dropdown.Size = UDim2.new(0, 221, 0, holderHeight)
+                            updateSection()
+                            updateSize()
+                        end
 
-                        button_dropdown.MouseEnter:Connect(
-                            function()
-                                gradient_button_dropdown.Color =
-                                    ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(132, 100, 213)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
-                                }
+                        local function refreshCanvas()
+                            local content = layout_dropdown_container.AbsoluteContentSize.Y + 8
+                            dropdown_container.CanvasSize = UDim2.new(0, 0, 0, content)
+                            if dropdownIsOpen then
+                                resizeDropdown(true)
                             end
-                        )
-                        button_dropdown.MouseLeave:Connect(
-                            function()
-                                gradient_button_dropdown.Color =
-                                    ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
-                                }
-                            end
-                        )
+                        end
 
-                        for i, v in next, Configuration_Dropdown.Options do
+                        local function selectOption(optionText)
+                            selectedValue = tostring(optionText)
+                            button_dropdown_text.Text = selectedValue
+                            for _, btn in next, optionButtons do
+                                local txt = btn:FindFirstChild("option_text")
+                                if txt then
+                                    txt.TextColor3 = (txt.Text == selectedValue) and Color3.fromRGB(145, 115, 220) or Color3.fromRGB(205, 205, 205)
+                                end
+                            end
+                            dropdownIsOpen = false
+                            resizeDropdown(false)
+                            pcall(Configuration_Dropdown.Script, selectedValue)
+                        end
+
+                        local function makeOption(option)
+                            option = tostring(option)
                             local button_dropdown_option = Instance.new("TextButton")
-                            local layout_button_dropdown_option = Instance.new("UIListLayout")
-                            local button_dropdown_text_2 = Instance.new("TextLabel")
-                            local gradient_button_dropdown_option = Instance.new("UIGradient")
+                            local option_text = Instance.new("TextLabel")
+                            local option_gradient = Instance.new("UIGradient")
 
                             button_dropdown_option.Name = "button_dropdown_option"
                             button_dropdown_option.Parent = dropdown_container
                             button_dropdown_option.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                             button_dropdown_option.BorderSizePixel = 0
-                            button_dropdown_option.Size = UDim2.new(0, 219, 0, 12)
+                            button_dropdown_option.Size = UDim2.new(1, -6, 0, 17)
                             button_dropdown_option.AutoButtonColor = false
-                            button_dropdown_option.Font = Enum.Font.Jura
-                            button_dropdown_option.LineHeight = 1.100
                             button_dropdown_option.Text = ""
-                            button_dropdown_option.TextColor3 = Color3.fromRGB(200, 200, 200)
-                            button_dropdown_option.TextSize = 14.000
-                            button_dropdown_option.ZIndex = 5
+                            button_dropdown_option.ZIndex = 23
 
-                            layout_button_dropdown_option.Name = "layout_button_dropdown_option"
-                            layout_button_dropdown_option.Parent = button_dropdown_option
-                            layout_button_dropdown_option.FillDirection = Enum.FillDirection.Horizontal
-                            layout_button_dropdown_option.HorizontalAlignment = Enum.HorizontalAlignment.Center
-                            layout_button_dropdown_option.SortOrder = Enum.SortOrder.LayoutOrder
-                            layout_button_dropdown_option.VerticalAlignment = Enum.VerticalAlignment.Center
+                            option_gradient.Color = ColorSequence.new({
+                                ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 30)),
+                                ColorSequenceKeypoint.new(1, Color3.fromRGB(23, 23, 23))
+                            })
+                            option_gradient.Rotation = 90
+                            option_gradient.Parent = button_dropdown_option
 
-                            button_dropdown_text_2.Name = "button_dropdown_text"
-                            button_dropdown_text_2.Parent = button_dropdown_option
-                            button_dropdown_text_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                            button_dropdown_text_2.BackgroundTransparency = 1.000
-                            button_dropdown_text_2.Position = UDim2.new(0.00688073412, 0, -0.0833333358, 0)
-                            button_dropdown_text_2.Size = UDim2.new(0, 217, 0, 14)
-                            button_dropdown_text_2.Font = Enum.Font.Jura
-                            button_dropdown_text_2.LineHeight = 1.170
-                            button_dropdown_text_2.Text = v
-                            button_dropdown_text_2.TextColor3 = Color3.fromRGB(200, 200, 200)
-                            button_dropdown_text_2.TextSize = 13.000
-                            button_dropdown_text_2.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
-                            button_dropdown_text_2.TextStrokeTransparency = 0.300
-                            button_dropdown_text_2.ZIndex = 6
+                            option_text.Name = "option_text"
+                            option_text.Parent = button_dropdown_option
+                            option_text.BackgroundTransparency = 1
+                            option_text.Size = UDim2.new(1, -10, 1, 0)
+                            option_text.Position = UDim2.new(0, 5, 0, 0)
+                            option_text.Font = Enum.Font.Jura
+                            option_text.Text = option
+                            option_text.TextColor3 = (option == selectedValue) and Color3.fromRGB(145, 115, 220) or Color3.fromRGB(205, 205, 205)
+                            option_text.TextSize = 12
+                            option_text.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
+                            option_text.TextStrokeTransparency = 0.35
+                            option_text.TextXAlignment = Enum.TextXAlignment.Left
+                            option_text.TextTruncate = Enum.TextTruncate.AtEnd
+                            option_text.ZIndex = 24
 
-                            gradient_button_dropdown_option.Color =
-                                ColorSequence.new {
-                                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(25, 25, 25)),
-                                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(21, 21, 21))
-                            }
-                            gradient_button_dropdown_option.Rotation = 90
-                            gradient_button_dropdown_option.Name = "gradient_button_dropdown_option"
-                            gradient_button_dropdown_option.Parent = button_dropdown_option
+                            button_dropdown_option.MouseEnter:Connect(function()
+                                option_gradient.Color = ColorSequence.new({
+                                    ColorSequenceKeypoint.new(0, Color3.fromRGB(52, 42, 76)),
+                                    ColorSequenceKeypoint.new(1, Color3.fromRGB(37, 31, 52))
+                                })
+                            end)
+                            button_dropdown_option.MouseLeave:Connect(function()
+                                option_gradient.Color = ColorSequence.new({
+                                    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 30)),
+                                    ColorSequenceKeypoint.new(1, Color3.fromRGB(23, 23, 23))
+                                })
+                            end)
+                            button_dropdown_option.MouseButton1Click:Connect(function()
+                                selectOption(option)
+                            end)
 
-                            button_dropdown_option.MouseButton1Click:Connect(
-                                function()
-                                    if dropdownIsOpen then
-                                        for z, x in next, dropdown_container:GetChildren() do
-                                            if x:IsA("TextButton") then
-                                                for b, n in next, x:GetChildren() do
-                                                    if n:IsA("TextLabel") then
-                                                        n.TextColor3 = Color3.fromRGB(200, 200, 200)
-                                                    end
-                                                end
-                                            end
-                                        end
-                                        button_dropdown_text_2.TextColor3 = Color3.fromRGB(116, 88, 188)
-                                        button_dropdown_text.Text = "  " .. button_dropdown_text_2.Text
-                                        design_dropdown.Size = UDim2.new(0, 221, 0, 16)
-                                        dropdownIsOpen = false
-                                        Configuration_Dropdown.Script(button_dropdown_text_2.Text)
-                                        updateDropdown()
-                                        updateSection()
-                                        updateSize()
-                                    end
-                                end
-                            )
+                            table.insert(optionButtons, button_dropdown_option)
+                            refreshCanvas()
+                            return button_dropdown_option
                         end
 
-                        updateDropdown()
+                        button_dropdown.MouseButton1Click:Connect(function()
+                            dropdownIsOpen = not dropdownIsOpen
+                            resizeDropdown(dropdownIsOpen)
+                        end)
+                        button_dropdown.MouseEnter:Connect(function()
+                            gradient_button_dropdown.Color = ColorSequence.new({
+                                ColorSequenceKeypoint.new(0, Color3.fromRGB(132, 100, 213)),
+                                ColorSequenceKeypoint.new(1, Color3.fromRGB(93, 71, 152))
+                            })
+                        end)
+                        button_dropdown.MouseLeave:Connect(function()
+                            gradient_button_dropdown.Color = ColorSequence.new({
+                                ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 28, 28)),
+                                ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 22, 22))
+                            })
+                        end)
+
+                        for _, option in next, Options do
+                            makeOption(option)
+                        end
+
+                        refreshCanvas()
                         updateSection()
                         updateSize()
 
                         local DropdownTools = {}
-                        function SetLocalDropdownText(new)
-                            label_dropdown.Text = new
-                        end
                         function DropdownTools.SetText(new)
-                            label_dropdown.Text = new
+                            label_dropdown.Text = tostring(new)
                         end
-                        function AddLocalDropdownOption(option)
-                            local button_dropdown_option = Instance.new("TextButton")
-                            local layout_button_dropdown_option = Instance.new("UIListLayout")
-                            local button_dropdown_text_2 = Instance.new("TextLabel")
-                            local gradient_button_dropdown_option = Instance.new("UIGradient")
-
-                            button_dropdown_option.Name = "button_dropdown_option"
-                            button_dropdown_option.Parent = dropdown_container
-                            button_dropdown_option.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                            button_dropdown_option.BorderSizePixel = 0
-                            button_dropdown_option.Size = UDim2.new(0, 219, 0, 12)
-                            button_dropdown_option.AutoButtonColor = false
-                            button_dropdown_option.Font = Enum.Font.Jura
-                            button_dropdown_option.LineHeight = 1.100
-                            button_dropdown_option.Text = ""
-                            button_dropdown_option.TextColor3 = Color3.fromRGB(200, 200, 200)
-                            button_dropdown_option.TextSize = 14.000
-                            button_dropdown_option.ZIndex = 5
-
-                            layout_button_dropdown_option.Name = "layout_button_dropdown_option"
-                            layout_button_dropdown_option.Parent = button_dropdown_option
-                            layout_button_dropdown_option.FillDirection = Enum.FillDirection.Horizontal
-                            layout_button_dropdown_option.HorizontalAlignment = Enum.HorizontalAlignment.Center
-                            layout_button_dropdown_option.SortOrder = Enum.SortOrder.LayoutOrder
-                            layout_button_dropdown_option.VerticalAlignment = Enum.VerticalAlignment.Center
-
-                            button_dropdown_text_2.Name = "button_dropdown_text"
-                            button_dropdown_text_2.Parent = button_dropdown_option
-                            button_dropdown_text_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                            button_dropdown_text_2.BackgroundTransparency = 1.000
-                            button_dropdown_text_2.Position = UDim2.new(0.00688073412, 0, -0.0833333358, 0)
-                            button_dropdown_text_2.Size = UDim2.new(0, 217, 0, 14)
-                            button_dropdown_text_2.Font = Enum.Font.Jura
-                            button_dropdown_text_2.LineHeight = 1.170
-                            button_dropdown_text_2.Text = option
-                            button_dropdown_text_2.TextColor3 = Color3.fromRGB(200, 200, 200)
-                            button_dropdown_text_2.TextSize = 13.000
-                            button_dropdown_text_2.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
-                            button_dropdown_text_2.TextStrokeTransparency = 0.300
-                            button_dropdown_text_2.ZIndex = 6
-
-                            gradient_button_dropdown_option.Color =
-                                ColorSequence.new {
-                                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(25, 25, 25)),
-                                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(21, 21, 21))
-                            }
-                            gradient_button_dropdown_option.Rotation = 90
-                            gradient_button_dropdown_option.Name = "gradient_button_dropdown_option"
-                            gradient_button_dropdown_option.Parent = button_dropdown_option
-
-                            button_dropdown_option.MouseButton1Click:Connect(
-                                function()
-                                    if dropdownIsOpen then
-                                        for z, x in next, dropdown_container:GetChildren() do
-                                            if x:IsA("TextButton") then
-                                                for b, n in next, x:GetChildren() do
-                                                    if n:IsA("TextLabel") then
-                                                        n.TextColor3 = Color3.fromRGB(200, 200, 200)
-                                                    end
-                                                end
-                                            end
-                                        end
-                                        button_dropdown_text_2.TextColor3 = Color3.fromRGB(116, 88, 188)
-                                        button_dropdown_text.Text = "  " .. button_dropdown_text_2.Text
-                                        design_dropdown.Size = UDim2.new(0, 221, 0, 16)
-                                        dropdownIsOpen = false
-                                        Configuration_Dropdown.Script(button_dropdown_text_2.Text)
-                                        updateDropdown()
-                                        updateSection()
-                                        updateSize()
-                                    end
-                                end
-                            )
-                            updateDropdown()
-                            updateSection()
-                            updateSize()
-                            Configuration_Dropdown.Options[option] = option
+                        function DropdownTools.SetValue(new)
+                            selectOption(new)
+                        end
+                        function DropdownTools.GetValue()
+                            return selectedValue
                         end
                         function DropdownTools.AddOption(option)
-                            local button_dropdown_option = Instance.new("TextButton")
-                            local layout_button_dropdown_option = Instance.new("UIListLayout")
-                            local button_dropdown_text_2 = Instance.new("TextLabel")
-                            local gradient_button_dropdown_option = Instance.new("UIGradient")
-
-                            button_dropdown_option.Name = "button_dropdown_option"
-                            button_dropdown_option.Parent = dropdown_container
-                            button_dropdown_option.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                            button_dropdown_option.BorderSizePixel = 0
-                            button_dropdown_option.Size = UDim2.new(0, 219, 0, 12)
-                            button_dropdown_option.AutoButtonColor = false
-                            button_dropdown_option.Font = Enum.Font.Jura
-                            button_dropdown_option.LineHeight = 1.100
-                            button_dropdown_option.Text = ""
-                            button_dropdown_option.TextColor3 = Color3.fromRGB(200, 200, 200)
-                            button_dropdown_option.TextSize = 14.000
-                            button_dropdown_option.ZIndex = 5
-
-                            layout_button_dropdown_option.Name = "layout_button_dropdown_option"
-                            layout_button_dropdown_option.Parent = button_dropdown_option
-                            layout_button_dropdown_option.FillDirection = Enum.FillDirection.Horizontal
-                            layout_button_dropdown_option.HorizontalAlignment = Enum.HorizontalAlignment.Center
-                            layout_button_dropdown_option.SortOrder = Enum.SortOrder.LayoutOrder
-                            layout_button_dropdown_option.VerticalAlignment = Enum.VerticalAlignment.Center
-
-                            button_dropdown_text_2.Name = "button_dropdown_text"
-                            button_dropdown_text_2.Parent = button_dropdown_option
-                            button_dropdown_text_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                            button_dropdown_text_2.BackgroundTransparency = 1.000
-                            button_dropdown_text_2.Position = UDim2.new(0.00688073412, 0, -0.0833333358, 0)
-                            button_dropdown_text_2.Size = UDim2.new(0, 217, 0, 14)
-                            button_dropdown_text_2.Font = Enum.Font.Jura
-                            button_dropdown_text_2.LineHeight = 1.170
-                            button_dropdown_text_2.Text = option
-                            button_dropdown_text_2.TextColor3 = Color3.fromRGB(200, 200, 200)
-                            button_dropdown_text_2.TextSize = 13.000
-                            button_dropdown_text_2.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
-                            button_dropdown_text_2.TextStrokeTransparency = 0.300
-                            button_dropdown_text_2.ZIndex = 6
-
-                            gradient_button_dropdown_option.Color =
-                                ColorSequence.new {
-                                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(25, 25, 25)),
-                                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(21, 21, 21))
-                            }
-                            gradient_button_dropdown_option.Rotation = 90
-                            gradient_button_dropdown_option.Name = "gradient_button_dropdown_option"
-                            gradient_button_dropdown_option.Parent = button_dropdown_option
-
-                            button_dropdown_option.MouseButton1Click:Connect(
-                                function()
-                                    if dropdownIsOpen then
-                                        for z, x in next, dropdown_container:GetChildren() do
-                                            if x:IsA("TextButton") then
-                                                for b, n in next, x:GetChildren() do
-                                                    if n:IsA("TextLabel") then
-                                                        n.TextColor3 = Color3.fromRGB(200, 200, 200)
-                                                    end
-                                                end
-                                            end
-                                        end
-                                        button_dropdown_text_2.TextColor3 = Color3.fromRGB(116, 88, 188)
-                                        button_dropdown_text.Text = "  " .. button_dropdown_text_2.Text
-                                        design_dropdown.Size = UDim2.new(0, 221, 0, 16)
-                                        dropdownIsOpen = false
-                                        Configuration_Dropdown.Script(button_dropdown_text_2.Text)
-                                        updateDropdown()
-                                        updateSection()
-                                        updateSize()
-                                    end
-                                end
-                            )
-                            updateDropdown()
-                            updateSection()
-                            updateSize()
-                            Configuration_Dropdown.Options[option] = option
-                        end
-                        function RemoveLocalDropdownOption(option)
-                            for i, v in next, dropdown_container:GetChildren() do
-                                if v:IsA("TextButton") then
-                                    for z, x in next, v:GetChildren() do
-                                        if x:IsA("TextLabel") and x.Text == option then
-                                            v:Destroy()
-                                            Configuration_Dropdown.Options[option] = nil
-                                        end
-                                    end
-                                end
-                            end
-                            updateDropdown()
-                            updateSection()
-                            updateSize()
+                            table.insert(Configuration_Dropdown.Options, option)
+                            makeOption(option)
                         end
                         function DropdownTools.RemoveOption(option)
-                            for i, v in next, dropdown_container:GetChildren() do
-                                if v:IsA("TextButton") then
-                                    for z, x in next, v:GetChildren() do
-                                        if x:IsA("TextLabel") and x.Text == option then
-                                            v:Destroy()
-                                            Configuration_Dropdown.Options[option] = nil
-                                        end
-                                    end
+                            option = tostring(option)
+                            for i = #optionButtons, 1, -1 do
+                                local btn = optionButtons[i]
+                                local txt = btn:FindFirstChild("option_text")
+                                if txt and txt.Text == option then
+                                    btn:Destroy()
+                                    table.remove(optionButtons, i)
                                 end
                             end
-                            updateDropdown()
+                            for i = #Configuration_Dropdown.Options, 1, -1 do
+                                if tostring(Configuration_Dropdown.Options[i]) == option then
+                                    table.remove(Configuration_Dropdown.Options, i)
+                                end
+                            end
+                            refreshCanvas()
+                            updateSection()
+                            updateSize()
+                        end
+                        function DropdownTools.ClearOptions()
+                            for _, btn in next, optionButtons do
+                                btn:Destroy()
+                            end
+                            optionButtons = {}
+                            Configuration_Dropdown.Options = {}
+                            refreshCanvas()
                             updateSection()
                             updateSize()
                         end
@@ -1695,302 +1528,141 @@ function bungiesLibrary.Load(SelectedLibrary)
                         return SliderTools
                     end
                     function SectionTools:CreateTextBox(Configuration_TextBox)
+                        Configuration_TextBox = Configuration_TextBox or {}
                         Configuration_TextBox = {
                             Text = Configuration_TextBox.Text or "textbox",
-                            PlaceHolder = Configuration_TextBox.PlaceHolder or "",
+                            PlaceHolder = Configuration_TextBox.PlaceHolder or Configuration_TextBox.Placeholder or "",
+                            Default = Configuration_TextBox.Default or "",
                             Pattern = Configuration_TextBox.Pattern or "",
-                            Script = Configuration_TextBox.Script or function()
-                                end
+                            ClearOnFocus = Configuration_TextBox.ClearOnFocus or false,
+                            Script = Configuration_TextBox.Script or function() end
                         }
 
-                        local design_textbox = Instance.new("Frame")
-                        local layout_design_textbox = Instance.new("UIListLayout")
+                        local holder_textbox = Instance.new("Frame")
                         local label_textbox = Instance.new("TextLabel")
-                        local anti_textbox_layout = Instance.new("Folder")
-                        local design_textbox_2 = Instance.new("Frame")
-                        local gradient_design_textbox = Instance.new("UIGradient")
-                        local layout_design_textbox_2 = Instance.new("UIListLayout")
-                        local design_textbox_2_2 = Instance.new("Frame")
+                        local design_textbox = Instance.new("Frame")
                         local textbox = Instance.new("TextBox")
-                        local constraint_textbox = Instance.new("UISizeConstraint")
-                        local gradient_design_textbox_2 = Instance.new("UIGradient")
-                        local layout_design_textbox_2_2 = Instance.new("UIListLayout")
-                        local constraint_design_textbox_2 = Instance.new("UISizeConstraint")
-                        local constraint_design_textbox = Instance.new("UISizeConstraint")
-                        local layout_anti_textbox_layout = Instance.new("UIListLayout")
+                        local gradient_design_textbox = Instance.new("UIGradient")
+                        local gradient_textbox = Instance.new("UIGradient")
 
-                        design_textbox.Name = "design_textbox"
-                        design_textbox.Parent = section
-                        design_textbox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        design_textbox.BackgroundTransparency = 1.000
-                        design_textbox.Position = UDim2.new(0.0169491526, 0, 0.390625, 0)
-                        design_textbox.Size = UDim2.new(0, 224, 0, 16)
-
-                        layout_design_textbox.Name = "layout_design_textbox"
-                        layout_design_textbox.Parent = design_textbox
-                        layout_design_textbox.SortOrder = Enum.SortOrder.LayoutOrder
-                        layout_design_textbox.VerticalAlignment = Enum.VerticalAlignment.Center
+                        holder_textbox.Name = "holder_textbox"
+                        holder_textbox.Parent = section
+                        holder_textbox.BackgroundTransparency = 1
+                        holder_textbox.Size = UDim2.new(0, 221, 0, 38)
 
                         label_textbox.Name = "label_textbox"
-                        label_textbox.Parent = design_textbox
-                        label_textbox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        label_textbox.BackgroundTransparency = 1.000
-                        label_textbox.Size = UDim2.new(0, 232, 0, 16)
+                        label_textbox.Parent = holder_textbox
+                        label_textbox.BackgroundTransparency = 1
+                        label_textbox.Position = UDim2.new(0, 0, 0, 0)
+                        label_textbox.Size = UDim2.new(0, 221, 0, 15)
                         label_textbox.Font = Enum.Font.Jura
-                        label_textbox.Text = " " .. Configuration_TextBox.Text
+                        label_textbox.Text = Configuration_TextBox.Text
                         label_textbox.TextColor3 = Color3.fromRGB(225, 225, 225)
-                        label_textbox.TextSize = 13.000
+                        label_textbox.TextSize = 13
+                        label_textbox.TextStrokeColor3 = Color3.fromRGB(15, 15, 15)
+                        label_textbox.TextStrokeTransparency = 0.35
                         label_textbox.TextXAlignment = Enum.TextXAlignment.Left
 
-                        anti_textbox_layout.Name = "anti_textbox_layout"
-                        anti_textbox_layout.Parent = design_textbox
+                        design_textbox.Name = "design_textbox"
+                        design_textbox.Parent = holder_textbox
+                        design_textbox.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+                        design_textbox.BorderColor3 = Color3.fromRGB(65, 65, 65)
+                        design_textbox.Position = UDim2.new(0, 0, 0, 18)
+                        design_textbox.Size = UDim2.new(0, 221, 0, 18)
+                        design_textbox.ClipsDescendants = true
 
-                        design_textbox_2.Name = "design_textbox"
-                        design_textbox_2.Parent = anti_textbox_layout
-                        design_textbox_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        design_textbox_2.BorderColor3 = Color3.fromRGB(200, 200, 200)
-                        design_textbox_2.Position = UDim2.new(0.912946403, 0, 0.0625, 0)
-                        design_textbox_2.Size = UDim2.new(0, 19, 0, 14)
-
-                        gradient_design_textbox.Color =
-                            ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
-                        }
+                        gradient_design_textbox.Color = ColorSequence.new({
+                            ColorSequenceKeypoint.new(0, Color3.fromRGB(36, 36, 36)),
+                            ColorSequenceKeypoint.new(1, Color3.fromRGB(27, 27, 27))
+                        })
                         gradient_design_textbox.Rotation = 90
-                        gradient_design_textbox.Name = "gradient_design_textbox"
-                        gradient_design_textbox.Parent = design_textbox_2
-
-                        layout_design_textbox_2.Name = "layout_design_textbox"
-                        layout_design_textbox_2.Parent = design_textbox_2
-                        layout_design_textbox_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
-                        layout_design_textbox_2.SortOrder = Enum.SortOrder.LayoutOrder
-                        layout_design_textbox_2.VerticalAlignment = Enum.VerticalAlignment.Center
-
-                        design_textbox_2_2.Name = "design_textbox_2"
-                        design_textbox_2_2.Parent = design_textbox_2
-                        design_textbox_2_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        design_textbox_2_2.BorderSizePixel = 0
-                        design_textbox_2_2.Position = UDim2.new(2.04166675, 0, 0.0714285746, 0)
-                        design_textbox_2_2.Size = UDim2.new(0, 0, 0, 12)
+                        gradient_design_textbox.Parent = design_textbox
 
                         textbox.Name = "textbox"
-                        textbox.Parent = design_textbox_2_2
+                        textbox.Parent = design_textbox
                         textbox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        textbox.BackgroundTransparency = 1.000
                         textbox.BorderSizePixel = 0
-                        textbox.Position = UDim2.new(2, 0, 0, 0)
-                        textbox.Size = UDim2.new(0, 3, 0, 12)
+                        textbox.Position = UDim2.new(0, 1, 0, 1)
+                        textbox.Size = UDim2.new(0, 219, 0, 16)
+                        textbox.ClearTextOnFocus = Configuration_TextBox.ClearOnFocus
                         textbox.Font = Enum.Font.Jura
-                        textbox.LineHeight = 1.250
-                        textbox.PlaceholderColor3 = Color3.fromRGB(130, 130, 130)
+                        textbox.Text = tostring(Configuration_TextBox.Default)
                         textbox.PlaceholderText = Configuration_TextBox.PlaceHolder
-                        textbox.Text = ""
-                        textbox.TextColor3 = Color3.fromRGB(230, 230, 230)
-                        textbox.TextSize = 12.000
-                        textbox.TextStrokeColor3 = Color3.fromRGB(15, 15, 15)
-                        textbox.TextStrokeTransparency = 0.300
-                        textbox.TextTruncate = "AtEnd"
-                        textbox.LineHeight = 1.15
-                        textbox.ClearTextOnFocus = false
+                        textbox.PlaceholderColor3 = Color3.fromRGB(130, 130, 130)
+                        textbox.TextColor3 = Color3.fromRGB(220, 220, 220)
+                        textbox.TextSize = 12
+                        textbox.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
+                        textbox.TextStrokeTransparency = 0.35
+                        textbox.TextXAlignment = Enum.TextXAlignment.Left
+                        textbox.TextTruncate = Enum.TextTruncate.AtEnd
 
-                        constraint_textbox.Name = "constraint_textbox"
-                        constraint_textbox.Parent = textbox
-                        constraint_textbox.MaxSize = Vector2.new(222, 12)
-                        constraint_textbox.MinSize = Vector2.new(72, 12)
+                        gradient_textbox.Color = ColorSequence.new({
+                            ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 28, 28)),
+                            ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 22, 22))
+                        })
+                        gradient_textbox.Rotation = 90
+                        gradient_textbox.Parent = textbox
 
-                        gradient_design_textbox_2.Color =
-                            ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
-                        }
-                        gradient_design_textbox_2.Rotation = 90
-                        gradient_design_textbox_2.Name = "gradient_design_textbox_2"
-                        gradient_design_textbox_2.Parent = design_textbox_2_2
-
-                        layout_design_textbox_2_2.Name = "layout_design_textbox_2"
-                        layout_design_textbox_2_2.Parent = design_textbox_2_2
-                        layout_design_textbox_2_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
-                        layout_design_textbox_2_2.SortOrder = Enum.SortOrder.LayoutOrder
-                        layout_design_textbox_2_2.VerticalAlignment = Enum.VerticalAlignment.Center
-
-                        constraint_design_textbox_2.Name = "constraint_design_textbox_2"
-                        constraint_design_textbox_2.Parent = design_textbox_2_2
-                        constraint_design_textbox_2.MaxSize = Vector2.new(222, 12)
-                        constraint_design_textbox_2.MinSize = Vector2.new(72, 12)
-
-                        constraint_design_textbox.Name = "constraint_design_textbox"
-                        constraint_design_textbox.Parent = design_textbox_2
-                        constraint_design_textbox.MaxSize = Vector2.new(224, 14)
-                        constraint_design_textbox.MinSize = Vector2.new(74, 12)
-
-                        layout_anti_textbox_layout.Name = "layout_anti_textbox_layout"
-                        layout_anti_textbox_layout.Parent = anti_textbox_layout
-                        layout_anti_textbox_layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-                        layout_anti_textbox_layout.SortOrder = Enum.SortOrder.LayoutOrder
-                        layout_anti_textbox_layout.VerticalAlignment = Enum.VerticalAlignment.Center
-
-                        -- text checks
-                        textbox:GetPropertyChangedSignal("Text"):Connect(
-                            function()
-                                if Configuration_TextBox.Pattern ~= "" then
-                                    if Configuration_TextBox.Pattern:lower() == "lower" then
-                                        textbox.Text = textbox.Text:lower()
-                                    else
-                                    end
-                                end
+                        local function cleanInput(value)
+                            value = tostring(value or "")
+                            local pattern = tostring(Configuration_TextBox.Pattern or ""):lower()
+                            if pattern == "lower" then
+                                value = value:lower()
+                            elseif pattern == "upper" then
+                                value = value:upper()
+                            elseif pattern == "number" or pattern == "numbers" or pattern == "numeric" then
+                                value = value:gsub("[^%d%.%-]", "")
                             end
-                        )
-                        textbox:GetPropertyChangedSignal("Text"):Connect(
-                            function()
-                                if Configuration_TextBox.Pattern ~= "" then
-                                    if Configuration_TextBox.Pattern:lower() == "number" then
-                                        textbox.Text = textbox.Text:gsub("%D+", "")
-                                    else
-                                    end
-                                end
-                            end
-                        )
-                        textbox:GetPropertyChangedSignal("Text"):Connect(
-                            function()
-                                if Configuration_TextBox.Pattern ~= "" then
-                                    if Configuration_TextBox.Pattern:lower() == "upper" then
-                                        textbox.Text = textbox.Text:upper()
-                                    else
-                                    end
-                                end
-                            end
-                        )
-                        -------------
+                            return value
+                        end
 
-                        CreateTween(
-                            "textbox_autoscale",
-                            {
-                                Speed = 0.013,
-                                Style = Enum.EasingStyle.Sine,
-                                Direction = Enum.EasingDirection.InOut,
-                                LoopAmount = 0,
-                                Reverse = false,
-                                Delay = 0
-                            }
-                        )
-                        textbox.Focused:Connect(
-                            function()
-                                    local newTextboxSize =
-                                        TextService:GetTextSize(
-                                        textbox.Text,
-                                        textbox.TextSize,
-                                        textbox.Font,
-                                        Vector2.new(math.huge, math.huge)
-                                    )
-                                    TweenService:Create(
-                                        design_textbox_2_2,
-                                        TweenTable["textbox_autoscale"],
-                                        {Size = UDim2.new(0, newTextboxSize.X + 2, 0, 12)}
-                                    ):Play()
-                                    TweenService:Create(
-                                        textbox,
-                                        TweenTable["textbox_autoscale"],
-                                        {Size = UDim2.new(0, newTextboxSize.X, 0, 12)}
-                                    ):Play()
-                                    TweenService:Create(
-                                        design_textbox_2,
-                                        TweenTable["textbox_autoscale"],
-                                        {Size = UDim2.new(0, newTextboxSize.X + 4, 0, 14)}
-                                    ):Play()
-                            end
-                        )
-                        textbox:GetPropertyChangedSignal("Text"):Connect(
-                            function()
-                                newTextboxSize =
-                                    TextService:GetTextSize(
-                                    textbox.Text,
-                                    textbox.TextSize,
-                                    textbox.Font,
-                                    Vector2.new(math.huge, math.huge)
-                                )
-                                TweenService:Create(
-                                    design_textbox_2_2,
-                                    TweenTable["textbox_autoscale"],
-                                    {Size = UDim2.new(0, newTextboxSize.X + 2, 0, 12)}
-                                ):Play()
-                                TweenService:Create(
-                                    textbox,
-                                    TweenTable["textbox_autoscale"],
-                                    {Size = UDim2.new(0, newTextboxSize.X, 0, 12)}
-                                ):Play()
-                                TweenService:Create(
-                                    design_textbox_2,
-                                    TweenTable["textbox_autoscale"],
-                                    {Size = UDim2.new(0, newTextboxSize.X + 4, 0, 14)}
-                                ):Play()
-                            end
-                        )
+                        local function submit()
+                            textbox.Text = cleanInput(textbox.Text)
+                            pcall(Configuration_TextBox.Script, textbox.Text)
+                        end
 
-                        textbox.FocusLost:Connect(
-                            function(enterPressed)
-                                if enterPressed then
-                                    Configuration_TextBox.Script(textbox.Text)
-                                end
-                                    TweenService:Create(
-                                        design_textbox_2_2,
-                                        TweenTable["textbox_autoscale"],
-                                        {Size = UDim2.new(0, 72, 0, 12)}
-                                    ):Play()
-                                    TweenService:Create(
-                                        textbox,
-                                        TweenTable["textbox_autoscale"],
-                                        {Size = UDim2.new(0, 72, 0, 12)}
-                                    ):Play()
-                                    TweenService:Create(
-                                        design_textbox_2,
-                                        TweenTable["textbox_autoscale"],
-                                        {Size = UDim2.new(0, 74, 0, 14)}
-                                    ):Play()
-                            end
-                        )
+                        textbox.Focused:Connect(function()
+                            TweenService:Create(design_textbox, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                                BorderColor3 = Color3.fromRGB(111, 83, 177)
+                            }):Play()
+                            gradient_textbox.Color = ColorSequence.new({
+                                ColorSequenceKeypoint.new(0, Color3.fromRGB(34, 34, 34)),
+                                ColorSequenceKeypoint.new(1, Color3.fromRGB(26, 26, 26))
+                            })
+                        end)
 
-                        design_textbox.MouseEnter:Connect(
-                            function()
-                                gradient_design_textbox.Color =
-                                    ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(132, 100, 213)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
-                                }
-                            end
-                        )
-                        design_textbox.MouseLeave:Connect(
-                            function()
-                                gradient_design_textbox.Color =
-                                    ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
-                                }
-                            end
-                        )
+                        textbox.FocusLost:Connect(function(enterPressed)
+                            TweenService:Create(design_textbox, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                                BorderColor3 = Color3.fromRGB(65, 65, 65)
+                            }):Play()
+                            gradient_textbox.Color = ColorSequence.new({
+                                ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 28, 28)),
+                                ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 22, 22))
+                            })
+                            submit()
+                        end)
 
                         updateSection()
                         updateSize()
+
                         local TextBoxTools = {}
                         function TextBoxTools.SetText(new)
-                            label_textbox.Text = " " .. new
-                        end
-                        function SetLocalTextBoxText(new)
-                            label_textbox.Text = " " .. new
+                            label_textbox.Text = tostring(new)
                         end
                         function TextBoxTools.SetInput(new)
-                            textbox.Text = new
+                            textbox.Text = cleanInput(new)
                         end
-                        function SetLocalTextBoxInput(new)
-                            textbox.Text = new
+                        function TextBoxTools.GetInput()
+                            return textbox.Text
+                        end
+                        function TextBoxTools.Submit()
+                            submit()
                         end
                         function TextBoxTools.ClearInput()
                             textbox.Text = ""
                         end
-                        function ClearLocalTextBoxInput()
-                            textbox.Text = ""
-                        end
                         return TextBoxTools
+                    end
                     end
                     function SectionTools:CreateKeybind(Configuration_Keybind)
                         Configuration_Keybind = {
