@@ -17,7 +17,7 @@ local ContentService = game:GetService("ContentProvider")
 
 -- / Main Library
 local bungiesLibrary = {}
-bungiesLibrary.__version = "hashui_big_123kb_v8_nilfix"
+bungiesLibrary.__version = "hashui_big_123kb_v9_compilefix"
 local ENV = (getgenv and getgenv()) or _G
 ENV.ui = false
 function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
@@ -34,7 +34,7 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
     local selectedLower = string.lower(SelectedLibrary)
 
     if selectedLower == "" then
-        warn("HashUI Load called without a library name; use Library.Load("ui") or Library.Load("notif")")
+        warn('HashUI Load called without a library name; use Library.Load("ui") or Library.Load("notif")')
         selectedLower = "ui"
     end
 
