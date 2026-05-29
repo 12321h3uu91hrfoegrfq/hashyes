@@ -17,29 +17,12 @@ local ContentService = game:GetService("ContentProvider")
 
 -- / Main Library
 local bungiesLibrary = {}
-bungiesLibrary.__version = "hashui_big_123kb_v10_notiffix"
-local ENV = (getgenv and getgenv()) or _G
-ENV.ui = false
-function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
-    local SelectedLibrary
-
-    -- Supports Library.Load("ui"), Library:Load("ui"), and safe nil handling.
-    if type(selfOrSelectedLibrary) == "table" then
-        SelectedLibrary = maybeSelectedLibrary
-    else
-        SelectedLibrary = selfOrSelectedLibrary
-    end
-
+getgenv().ui = false
+function bungiesLibrary.Load(SelectedLibrary)
     SelectedLibrary = tostring(SelectedLibrary or "")
     local selectedLower = string.lower(SelectedLibrary)
-
-    if selectedLower == "" then
-        warn('HashUI Load called without a library name; use Library.Load("ui") or Library.Load("notif")')
-        selectedLower = "ui"
-    end
-
     if string.find(selectedLower, "ui", 1, true) then
-        ENV.ui = true
+        ui = true
 
         -- Tweening
         local TweenAmount = 1
@@ -175,7 +158,8 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
         -- Window function
         local Interface = {}
         function Interface:Start(Configuration)
-            ENV.ui = true
+            ui = true
+            Configuration = Configuration or {}
             Configuration = {
                 Header = Configuration.Header or "undefined header",
                 Footer = Configuration.Footer or
@@ -350,6 +334,7 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
             local InterfaceTools = {}
             local isFirstPageAdded = true
             function InterfaceTools:CreatePage(Configuration_Page)
+                Configuration_Page = Configuration_Page or {}
                 Configuration_Page = {
                     Subject = Configuration_Page.Subject or "undefined subject",
                     Footer = Configuration_Page.Footer or "undefined footer"
@@ -524,6 +509,7 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
 
                 local PageTools = {}
                 function PageTools:CreateSection(Configuration_Section)
+                    Configuration_Section = Configuration_Section or {}
                     Configuration_Section = {
                         Header = Configuration_Section.Header or "Section"
                     }
@@ -599,6 +585,7 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
 
                     local SectionTools = {}
                     function SectionTools:CreateButton(Configuration_Button)
+                        Configuration_Button = Configuration_Button or {}
                         Configuration_Button = {
                             Text = Configuration_Button.Text or "button",
                             Script = Configuration_Button.Script or function()
@@ -736,6 +723,7 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
                         return ButtonTools
                     end
                     function SectionTools:CreateToggle(Configuration_Toggle)
+                        Configuration_Toggle = Configuration_Toggle or {}
                         Configuration_Toggle = {
                             Text = Configuration_Toggle.Text or "toggle",
                             Latency = Configuration_Toggle.Latency or 0,
@@ -878,340 +866,278 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
                     end
                     function SectionTools:CreateDropdown(Configuration_Dropdown)
                         Configuration_Dropdown = Configuration_Dropdown or {}
-                        local Options = Configuration_Dropdown.Options or {}
                         Configuration_Dropdown = {
                             Text = Configuration_Dropdown.Text or "dropdown",
                             Default = Configuration_Dropdown.Default or ". . .",
-                            Options = Options,
+                            Options = Configuration_Dropdown.Options or {},
                             Script = Configuration_Dropdown.Script or function() end
                         }
 
                         local selectedValue = tostring(Configuration_Dropdown.Default)
-                        local dropdownIsOpen = false
-                        local optionButtons = {}
-                        local closedHeight = 64
-                        local buttonHeight = 34
-                        local optionHeight = 30
-                        local maxListHeight = 190
-                        local accent = Color3.fromRGB(150, 116, 255)
-
-                        local function tween(obj, props, time)
-                            TweenService:Create(obj, TweenInfo.new(time or 0.16, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), props):Play()
-                        end
-
                         local holder_dropdown = Instance.new("Frame")
                         local label_dropdown = Instance.new("TextLabel")
                         local design_dropdown = Instance.new("Frame")
-                        local design_corner = Instance.new("UICorner")
-                        local design_stroke = Instance.new("UIStroke")
+                        local dropdown_corner = Instance.new("UICorner")
+                        local dropdown_stroke = Instance.new("UIStroke")
                         local button_dropdown = Instance.new("TextButton")
                         local button_dropdown_text = Instance.new("TextLabel")
-                        local button_dropdown_arrow = Instance.new("ImageLabel")
-                        local dropdown_container = Instance.new("ScrollingFrame")
-                        local dropdown_corner = Instance.new("UICorner")
+                        local button_dropdown_arrow = Instance.new("TextLabel")
+                        local dropdown_container = Instance.new("Frame")
+                        local dropdown_container_corner = Instance.new("UICorner")
                         local layout_dropdown_container = Instance.new("UIListLayout")
-                        local padding_dropdown_container = Instance.new("UIPadding")
-                        local gradient_button_dropdown = Instance.new("UIGradient")
 
                         holder_dropdown.Name = "holder_dropdown"
                         holder_dropdown.Parent = section
                         holder_dropdown.BackgroundTransparency = 1
-                        holder_dropdown.Size = UDim2.new(0, 221, 0, closedHeight)
+                        holder_dropdown.Size = UDim2.new(0, 221, 0, 48)
                         holder_dropdown.ClipsDescendants = false
-                        holder_dropdown.ZIndex = 80
+                        holder_dropdown.ZIndex = 20
 
                         label_dropdown.Name = "label_dropdown"
                         label_dropdown.Parent = holder_dropdown
                         label_dropdown.BackgroundTransparency = 1
-                        label_dropdown.Position = UDim2.new(0, 1, 0, 0)
-                        label_dropdown.Size = UDim2.new(1, -2, 0, 20)
-                        label_dropdown.Font = Enum.Font.GothamSemibold
+                        label_dropdown.Position = UDim2.new(0, 0, 0, 0)
+                        label_dropdown.Size = UDim2.new(1, 0, 0, 16)
+                        label_dropdown.Font = Enum.Font.GothamMedium
                         label_dropdown.Text = Configuration_Dropdown.Text
-                        label_dropdown.TextColor3 = Color3.fromRGB(245, 245, 248)
+                        label_dropdown.TextColor3 = Color3.fromRGB(225, 225, 230)
                         label_dropdown.TextSize = 12
                         label_dropdown.TextStrokeTransparency = 1
                         label_dropdown.TextXAlignment = Enum.TextXAlignment.Left
-                        label_dropdown.ZIndex = 81
 
                         design_dropdown.Name = "design_dropdown"
                         design_dropdown.Parent = holder_dropdown
-                        design_dropdown.BackgroundColor3 = Color3.fromRGB(24, 24, 27)
+                        design_dropdown.BackgroundColor3 = Color3.fromRGB(25, 25, 29)
                         design_dropdown.BorderSizePixel = 0
                         design_dropdown.ClipsDescendants = true
-                        design_dropdown.Position = UDim2.new(0, 0, 0, 24)
-                        design_dropdown.Size = UDim2.new(0, 221, 0, buttonHeight)
-                        design_dropdown.ZIndex = 82
+                        design_dropdown.Position = UDim2.new(0, 0, 0, 19)
+                        design_dropdown.Size = UDim2.new(0, 221, 0, 27)
+                        design_dropdown.ZIndex = 21
 
-                        design_corner.CornerRadius = UDim.new(0, 8)
-                        design_corner.Parent = design_dropdown
+                        dropdown_corner.CornerRadius = UDim.new(0, 6)
+                        dropdown_corner.Parent = design_dropdown
 
-                        design_stroke.Color = Color3.fromRGB(68, 60, 88)
-                        design_stroke.Thickness = 1
-                        design_stroke.Transparency = 0.05
-                        design_stroke.Parent = design_dropdown
+                        dropdown_stroke.Parent = design_dropdown
+                        dropdown_stroke.Color = Color3.fromRGB(62, 62, 70)
+                        dropdown_stroke.Thickness = 1
+                        dropdown_stroke.Transparency = 0.15
 
                         button_dropdown.Name = "button_dropdown"
                         button_dropdown.Parent = design_dropdown
-                        button_dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        button_dropdown.BorderSizePixel = 0
-                        button_dropdown.Position = UDim2.new(0, 0, 0, 0)
-                        button_dropdown.Size = UDim2.new(1, 0, 0, buttonHeight)
+                        button_dropdown.BackgroundTransparency = 1
+                        button_dropdown.Size = UDim2.new(1, 0, 0, 27)
                         button_dropdown.AutoButtonColor = false
                         button_dropdown.Text = ""
-                        button_dropdown.ZIndex = 83
-
-                        gradient_button_dropdown.Color = ColorSequence.new({
-                            ColorSequenceKeypoint.new(0, Color3.fromRGB(43, 38, 58)),
-                            ColorSequenceKeypoint.new(1, Color3.fromRGB(27, 27, 34))
-                        })
-                        gradient_button_dropdown.Rotation = 90
-                        gradient_button_dropdown.Parent = button_dropdown
+                        button_dropdown.ZIndex = 22
 
                         button_dropdown_text.Name = "button_dropdown_text"
                         button_dropdown_text.Parent = button_dropdown
                         button_dropdown_text.BackgroundTransparency = 1
-                        button_dropdown_text.Position = UDim2.new(0, 12, 0, 0)
-                        button_dropdown_text.Size = UDim2.new(1, -42, 1, 0)
+                        button_dropdown_text.Position = UDim2.new(0, 10, 0, 0)
+                        button_dropdown_text.Size = UDim2.new(1, -34, 1, 0)
                         button_dropdown_text.Font = Enum.Font.Gotham
                         button_dropdown_text.Text = selectedValue
-                        button_dropdown_text.TextColor3 = Color3.fromRGB(225, 225, 228)
-                        button_dropdown_text.TextSize = 13
-                        button_dropdown_text.TextStrokeTransparency = 1
+                        button_dropdown_text.TextColor3 = Color3.fromRGB(232, 232, 238)
+                        button_dropdown_text.TextSize = 12
                         button_dropdown_text.TextXAlignment = Enum.TextXAlignment.Left
                         button_dropdown_text.TextTruncate = Enum.TextTruncate.AtEnd
-                        button_dropdown_text.ZIndex = 84
+                        button_dropdown_text.ZIndex = 23
 
                         button_dropdown_arrow.Name = "button_dropdown_arrow"
                         button_dropdown_arrow.Parent = button_dropdown
                         button_dropdown_arrow.BackgroundTransparency = 1
-                        button_dropdown_arrow.Position = UDim2.new(1, -28, 0.5, -8)
-                        button_dropdown_arrow.Size = UDim2.new(0, 16, 0, 16)
-                        button_dropdown_arrow.Image = "rbxassetid://3926307971"
-                        button_dropdown_arrow.ImageRectOffset = Vector2.new(324, 524)
-                        button_dropdown_arrow.ImageRectSize = Vector2.new(36, 36)
-                        button_dropdown_arrow.ImageColor3 = Color3.fromRGB(170, 170, 176)
-                        button_dropdown_arrow.ScaleType = Enum.ScaleType.Fit
-                        button_dropdown_arrow.ZIndex = 84
+                        button_dropdown_arrow.Position = UDim2.new(1, -25, 0, 0)
+                        button_dropdown_arrow.Size = UDim2.new(0, 20, 1, 0)
+                        button_dropdown_arrow.Font = Enum.Font.GothamBold
+                        button_dropdown_arrow.Text = "⌄"
+                        button_dropdown_arrow.TextColor3 = Color3.fromRGB(165, 165, 175)
+                        button_dropdown_arrow.TextSize = 14
+                        button_dropdown_arrow.ZIndex = 23
 
                         dropdown_container.Name = "dropdown_container"
                         dropdown_container.Parent = design_dropdown
-                        dropdown_container.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+                        dropdown_container.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
                         dropdown_container.BorderSizePixel = 0
-                        dropdown_container.Position = UDim2.new(0, 6, 0, buttonHeight + 6)
-                        dropdown_container.Size = UDim2.new(1, -12, 0, 0)
-                        dropdown_container.CanvasSize = UDim2.new(0, 0, 0, 0)
-                        dropdown_container.ScrollBarThickness = 3
-                        dropdown_container.ScrollBarImageColor3 = accent
-                        dropdown_container.ScrollingDirection = Enum.ScrollingDirection.Y
-                        dropdown_container.ClipsDescendants = true
-                        dropdown_container.ZIndex = 84
+                        dropdown_container.Position = UDim2.new(0, 5, 0, 31)
+                        dropdown_container.Size = UDim2.new(1, -10, 0, 0)
+                        dropdown_container.ZIndex = 24
 
-                        dropdown_corner.CornerRadius = UDim.new(0, 7)
-                        dropdown_corner.Parent = dropdown_container
+                        dropdown_container_corner.CornerRadius = UDim.new(0, 5)
+                        dropdown_container_corner.Parent = dropdown_container
 
                         layout_dropdown_container.Name = "layout_dropdown_container"
                         layout_dropdown_container.Parent = dropdown_container
                         layout_dropdown_container.SortOrder = Enum.SortOrder.LayoutOrder
-                        layout_dropdown_container.Padding = UDim.new(0, 5)
+                        layout_dropdown_container.Padding = UDim.new(0, 3)
 
-                        padding_dropdown_container.Name = "padding_dropdown_container"
-                        padding_dropdown_container.Parent = dropdown_container
-                        padding_dropdown_container.PaddingTop = UDim.new(0, 6)
-                        padding_dropdown_container.PaddingBottom = UDim.new(0, 6)
-                        padding_dropdown_container.PaddingLeft = UDim.new(0, 6)
-                        padding_dropdown_container.PaddingRight = UDim.new(0, 6)
+                        local dropdownIsOpen = false
+                        local optionButtons = {}
 
-                        local function getListHeight()
-                            local content = layout_dropdown_container.AbsoluteContentSize.Y + 12
-                            return math.clamp(content, 0, maxListHeight)
-                        end
-
-                        local function refreshCanvas()
-                            local content = layout_dropdown_container.AbsoluteContentSize.Y + 12
-                            dropdown_container.CanvasSize = UDim2.new(0, 0, 0, content)
-                        end
-
-                        local function resizeDropdown(open)
-                            refreshCanvas()
-                            local listHeight = open and getListHeight() or 0
-                            local openExtra = open and (listHeight + 12) or 0
-                            holder_dropdown.Size = UDim2.new(0, 221, 0, closedHeight + openExtra)
-                            tween(design_dropdown, {Size = UDim2.new(0, 221, 0, buttonHeight + openExtra)}, 0.18)
-                            tween(dropdown_container, {Size = UDim2.new(1, -12, 0, listHeight)}, 0.18)
-                            tween(button_dropdown_arrow, {Rotation = open and 180 or 0}, 0.16)
+                        local function refreshHolderSize()
+                            local optionHeight = dropdownIsOpen and (layout_dropdown_container.AbsoluteContentSize.Y + 8) or 0
+                            local totalHeight = dropdownIsOpen and (50 + optionHeight) or 48
+                            holder_dropdown.Size = UDim2.new(0, 221, 0, totalHeight)
+                            design_dropdown.Size = UDim2.new(0, 221, 0, dropdownIsOpen and (31 + optionHeight) or 27)
+                            dropdown_container.Size = UDim2.new(1, -10, 0, optionHeight)
+                            button_dropdown_arrow.Text = dropdownIsOpen and "⌃" or "⌄"
                             updateSection()
                             updateSize()
                         end
 
-                        local function updateSelectedColors()
-                            for _, btn in next, optionButtons do
-                                local txt = btn:FindFirstChild("option_text")
-                                local bar = btn:FindFirstChild("selected_bar")
-                                if txt then
-                                    local isSelected = txt.Text == selectedValue
-                                    txt.TextColor3 = isSelected and Color3.fromRGB(235, 225, 255) or Color3.fromRGB(205, 205, 210)
-                                    if bar then bar.BackgroundTransparency = isSelected and 0 or 1 end
+                        local function clearSelectedColors()
+                            for _, data in pairs(optionButtons) do
+                                if data.Label then
+                                    data.Label.TextColor3 = Color3.fromRGB(210, 210, 218)
+                                end
+                                if data.Bar then
+                                    data.Bar.BackgroundTransparency = 1
+                                end
+                                if data.Button then
+                                    data.Button.BackgroundColor3 = Color3.fromRGB(26, 26, 31)
                                 end
                             end
                         end
 
-                        local function selectOption(optionText)
-                            selectedValue = tostring(optionText)
+                        local function choose(option, fireCallback)
+                            selectedValue = tostring(option)
                             button_dropdown_text.Text = selectedValue
-                            updateSelectedColors()
+                            clearSelectedColors()
+                            local data = optionButtons[selectedValue]
+                            if data then
+                                data.Label.TextColor3 = Color3.fromRGB(190, 160, 255)
+                                data.Bar.BackgroundTransparency = 0
+                                data.Button.BackgroundColor3 = Color3.fromRGB(31, 29, 39)
+                            end
                             dropdownIsOpen = false
-                            resizeDropdown(false)
-                            pcall(Configuration_Dropdown.Script, selectedValue)
+                            refreshHolderSize()
+                            if fireCallback then
+                                pcall(Configuration_Dropdown.Script, selectedValue)
+                            end
                         end
 
-                        local function makeOption(option)
+                        local function addOption(option)
                             option = tostring(option)
-                            local optionButton = Instance.new("TextButton")
-                            local optionCorner = Instance.new("UICorner")
-                            local optionGradient = Instance.new("UIGradient")
-                            local optionText = Instance.new("TextLabel")
-                            local selectedBar = Instance.new("Frame")
-                            local selectedCorner = Instance.new("UICorner")
+                            if optionButtons[option] then return end
 
-                            optionButton.Name = "button_dropdown_option"
-                            optionButton.Parent = dropdown_container
-                            optionButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                            optionButton.BorderSizePixel = 0
-                            optionButton.Size = UDim2.new(1, -2, 0, optionHeight)
-                            optionButton.AutoButtonColor = false
-                            optionButton.Text = ""
-                            optionButton.ZIndex = 85
+                            local option_button = Instance.new("TextButton")
+                            local option_corner = Instance.new("UICorner")
+                            local selected_bar = Instance.new("Frame")
+                            local option_text = Instance.new("TextLabel")
 
-                            optionCorner.CornerRadius = UDim.new(0, 7)
-                            optionCorner.Parent = optionButton
+                            option_button.Name = "button_dropdown_option"
+                            option_button.Parent = dropdown_container
+                            option_button.BackgroundColor3 = Color3.fromRGB(26, 26, 31)
+                            option_button.BorderSizePixel = 0
+                            option_button.Size = UDim2.new(1, -8, 0, 24)
+                            option_button.Position = UDim2.new(0, 4, 0, 0)
+                            option_button.AutoButtonColor = false
+                            option_button.Text = ""
+                            option_button.ZIndex = 25
 
-                            optionGradient.Color = ColorSequence.new({
-                                ColorSequenceKeypoint.new(0, Color3.fromRGB(34, 34, 43)),
-                                ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 32))
-                            })
-                            optionGradient.Rotation = 90
-                            optionGradient.Parent = optionButton
+                            option_corner.CornerRadius = UDim.new(0, 4)
+                            option_corner.Parent = option_button
 
-                            selectedBar.Name = "selected_bar"
-                            selectedBar.Parent = optionButton
-                            selectedBar.BackgroundColor3 = accent
-                            selectedBar.BorderSizePixel = 0
-                            selectedBar.Position = UDim2.new(0, 0, 0.5, -10)
-                            selectedBar.Size = UDim2.new(0, 4, 0, 20)
-                            selectedBar.BackgroundTransparency = (option == selectedValue) and 0 or 1
-                            selectedBar.ZIndex = 86
+                            selected_bar.Name = "selected_bar"
+                            selected_bar.Parent = option_button
+                            selected_bar.BackgroundColor3 = Color3.fromRGB(125, 88, 220)
+                            selected_bar.BorderSizePixel = 0
+                            selected_bar.Position = UDim2.new(0, 0, 0, 4)
+                            selected_bar.Size = UDim2.new(0, 2, 1, -8)
+                            selected_bar.BackgroundTransparency = 1
+                            selected_bar.ZIndex = 26
 
-                            selectedCorner.CornerRadius = UDim.new(1, 0)
-                            selectedCorner.Parent = selectedBar
+                            option_text.Name = "button_dropdown_text"
+                            option_text.Parent = option_button
+                            option_text.BackgroundTransparency = 1
+                            option_text.Position = UDim2.new(0, 9, 0, 0)
+                            option_text.Size = UDim2.new(1, -14, 1, 0)
+                            option_text.Font = Enum.Font.Gotham
+                            option_text.Text = option
+                            option_text.TextColor3 = Color3.fromRGB(210, 210, 218)
+                            option_text.TextSize = 12
+                            option_text.TextXAlignment = Enum.TextXAlignment.Left
+                            option_text.TextTruncate = Enum.TextTruncate.AtEnd
+                            option_text.ZIndex = 26
 
-                            optionText.Name = "option_text"
-                            optionText.Parent = optionButton
-                            optionText.BackgroundTransparency = 1
-                            optionText.Position = UDim2.new(0, 14, 0, 0)
-                            optionText.Size = UDim2.new(1, -20, 1, 0)
-                            optionText.Font = Enum.Font.Gotham
-                            optionText.Text = option
-                            optionText.TextColor3 = (option == selectedValue) and Color3.fromRGB(235, 225, 255) or Color3.fromRGB(205, 205, 210)
-                            optionText.TextSize = 13
-                            optionText.TextStrokeTransparency = 1
-                            optionText.TextXAlignment = Enum.TextXAlignment.Left
-                            optionText.TextTruncate = Enum.TextTruncate.AtEnd
-                            optionText.ZIndex = 86
-
-                            optionButton.MouseEnter:Connect(function()
-                                optionGradient.Color = ColorSequence.new({
-                                    ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 55, 105)),
-                                    ColorSequenceKeypoint.new(1, Color3.fromRGB(42, 35, 58))
-                                })
+                            option_button.MouseEnter:Connect(function()
+                                if selectedValue ~= option then
+                                    option_button.BackgroundColor3 = Color3.fromRGB(34, 34, 40)
+                                end
                             end)
-                            optionButton.MouseLeave:Connect(function()
-                                optionGradient.Color = ColorSequence.new({
-                                    ColorSequenceKeypoint.new(0, Color3.fromRGB(27, 27, 32)),
-                                    ColorSequenceKeypoint.new(1, Color3.fromRGB(23, 23, 27))
-                                })
+                            option_button.MouseLeave:Connect(function()
+                                if selectedValue ~= option then
+                                    option_button.BackgroundColor3 = Color3.fromRGB(26, 26, 31)
+                                end
                             end)
-                            optionButton.MouseButton1Click:Connect(function()
-                                selectOption(option)
+                            option_button.MouseButton1Click:Connect(function()
+                                choose(option, true)
                             end)
 
-                            table.insert(optionButtons, optionButton)
-                            refreshCanvas()
-                            return optionButton
+                            optionButtons[option] = {Button = option_button, Label = option_text, Bar = selected_bar}
+                            refreshHolderSize()
                         end
 
-                        button_dropdown.MouseEnter:Connect(function()
-                            design_stroke.Color = accent
-                            gradient_button_dropdown.Color = ColorSequence.new({
-                                ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 35, 52)),
-                                ColorSequenceKeypoint.new(1, Color3.fromRGB(29, 27, 35))
-                            })
-                        end)
-                        button_dropdown.MouseLeave:Connect(function()
-                            design_stroke.Color = dropdownIsOpen and accent or Color3.fromRGB(55, 55, 62)
-                            gradient_button_dropdown.Color = ColorSequence.new({
-                                ColorSequenceKeypoint.new(0, Color3.fromRGB(34, 34, 39)),
-                                ColorSequenceKeypoint.new(1, Color3.fromRGB(25, 25, 29))
-                            })
-                        end)
+                        local function removeOption(option)
+                            option = tostring(option)
+                            local data = optionButtons[option]
+                            if data and data.Button then
+                                data.Button:Destroy()
+                            end
+                            optionButtons[option] = nil
+                            refreshHolderSize()
+                        end
+
                         button_dropdown.MouseButton1Click:Connect(function()
                             dropdownIsOpen = not dropdownIsOpen
-                            design_stroke.Color = dropdownIsOpen and accent or Color3.fromRGB(55, 55, 62)
-                            resizeDropdown(dropdownIsOpen)
+                            refreshHolderSize()
+                        end)
+                        button_dropdown.MouseEnter:Connect(function()
+                            dropdown_stroke.Color = Color3.fromRGB(125, 88, 220)
+                        end)
+                        button_dropdown.MouseLeave:Connect(function()
+                            dropdown_stroke.Color = Color3.fromRGB(62, 62, 70)
                         end)
 
-                        for _, option in next, Options do
-                            makeOption(option)
+                        for _, option in next, Configuration_Dropdown.Options do
+                            addOption(option)
                         end
-
-                        refreshCanvas()
-                        updateSection()
-                        updateSize()
+                        if optionButtons[selectedValue] then
+                            choose(selectedValue, false)
+                        end
+                        refreshHolderSize()
 
                         local DropdownTools = {}
                         function DropdownTools.SetText(new)
                             label_dropdown.Text = tostring(new)
                         end
                         function DropdownTools.SetValue(new)
-                            selectOption(new)
+                            if not optionButtons[tostring(new)] then
+                                addOption(new)
+                            end
+                            choose(new, false)
                         end
                         function DropdownTools.GetValue()
                             return selectedValue
                         end
                         function DropdownTools.AddOption(option)
-                            table.insert(Configuration_Dropdown.Options, option)
-                            makeOption(option)
-                            if dropdownIsOpen then resizeDropdown(true) end
+                            addOption(option)
                         end
                         function DropdownTools.RemoveOption(option)
-                            option = tostring(option)
-                            for i = #optionButtons, 1, -1 do
-                                local btn = optionButtons[i]
-                                local txt = btn:FindFirstChild("option_text")
-                                if txt and txt.Text == option then
-                                    btn:Destroy()
-                                    table.remove(optionButtons, i)
-                                end
-                            end
-                            for i = #Configuration_Dropdown.Options, 1, -1 do
-                                if tostring(Configuration_Dropdown.Options[i]) == option then
-                                    table.remove(Configuration_Dropdown.Options, i)
-                                end
-                            end
-                            refreshCanvas()
-                            resizeDropdown(dropdownIsOpen)
+                            removeOption(option)
                         end
                         function DropdownTools.ClearOptions()
-                            for _, btn in next, optionButtons do
-                                btn:Destroy()
+                            for option in pairs(optionButtons) do
+                                removeOption(option)
                             end
-                            optionButtons = {}
-                            Configuration_Dropdown.Options = {}
-                            refreshCanvas()
-                            resizeDropdown(dropdownIsOpen)
                         end
+                        AddLocalDropdownOption = addOption
+                        RemoveLocalDropdownOption = removeOption
+                        SetLocalDropdownText = function(new) label_dropdown.Text = tostring(new) end
                         return DropdownTools
                     end
-                    function SectionTools:CreateSlider(Configuration_Slider)
+function SectionTools:CreateSlider(Configuration_Slider)
+                        Configuration_Slider = Configuration_Slider or {}
+                        Configuration_Slider.Values = Configuration_Slider.Values or {}
                         Configuration_Slider = {
                             Text = Configuration_Slider.Text or "slider",
                             Suffix = Configuration_Slider.Suffix or "",
@@ -1584,115 +1510,92 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
                         Configuration_TextBox = Configuration_TextBox or {}
                         Configuration_TextBox = {
                             Text = Configuration_TextBox.Text or "textbox",
-                            PlaceHolder = Configuration_TextBox.PlaceHolder or Configuration_TextBox.Placeholder or "",
                             Default = Configuration_TextBox.Default or "",
-                            Pattern = Configuration_TextBox.Pattern or "",
-                            ClearOnFocus = Configuration_TextBox.ClearOnFocus or false,
+                            Pattern = Configuration_TextBox.Pattern or nil,
                             Script = Configuration_TextBox.Script or function() end
                         }
 
                         local holder_textbox = Instance.new("Frame")
                         local label_textbox = Instance.new("TextLabel")
                         local design_textbox = Instance.new("Frame")
-                        local textbox = Instance.new("TextBox")
-                        local gradient_design_textbox = Instance.new("UIGradient")
-                        local gradient_textbox = Instance.new("UIGradient")
+                        local textbox_corner = Instance.new("UICorner")
+                        local textbox_stroke = Instance.new("UIStroke")
+                        local box = Instance.new("TextBox")
 
                         holder_textbox.Name = "holder_textbox"
                         holder_textbox.Parent = section
                         holder_textbox.BackgroundTransparency = 1
-                        holder_textbox.Size = UDim2.new(0, 221, 0, 38)
+                        holder_textbox.Size = UDim2.new(0, 221, 0, 48)
 
                         label_textbox.Name = "label_textbox"
                         label_textbox.Parent = holder_textbox
                         label_textbox.BackgroundTransparency = 1
                         label_textbox.Position = UDim2.new(0, 0, 0, 0)
-                        label_textbox.Size = UDim2.new(0, 221, 0, 15)
-                        label_textbox.Font = Enum.Font.Jura
+                        label_textbox.Size = UDim2.new(1, 0, 0, 16)
+                        label_textbox.Font = Enum.Font.GothamMedium
                         label_textbox.Text = Configuration_TextBox.Text
-                        label_textbox.TextColor3 = Color3.fromRGB(225, 225, 225)
-                        label_textbox.TextSize = 13
-                        label_textbox.TextStrokeColor3 = Color3.fromRGB(15, 15, 15)
-                        label_textbox.TextStrokeTransparency = 0.35
+                        label_textbox.TextColor3 = Color3.fromRGB(225, 225, 230)
+                        label_textbox.TextSize = 12
+                        label_textbox.TextStrokeTransparency = 1
                         label_textbox.TextXAlignment = Enum.TextXAlignment.Left
 
                         design_textbox.Name = "design_textbox"
                         design_textbox.Parent = holder_textbox
-                        design_textbox.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-                        design_textbox.BorderColor3 = Color3.fromRGB(65, 65, 65)
-                        design_textbox.Position = UDim2.new(0, 0, 0, 18)
-                        design_textbox.Size = UDim2.new(0, 221, 0, 18)
-                        design_textbox.ClipsDescendants = true
+                        design_textbox.BackgroundColor3 = Color3.fromRGB(25, 25, 29)
+                        design_textbox.BorderSizePixel = 0
+                        design_textbox.Position = UDim2.new(0, 0, 0, 19)
+                        design_textbox.Size = UDim2.new(0, 221, 0, 27)
 
-                        gradient_design_textbox.Color = ColorSequence.new({
-                            ColorSequenceKeypoint.new(0, Color3.fromRGB(36, 36, 36)),
-                            ColorSequenceKeypoint.new(1, Color3.fromRGB(27, 27, 27))
-                        })
-                        gradient_design_textbox.Rotation = 90
-                        gradient_design_textbox.Parent = design_textbox
+                        textbox_corner.CornerRadius = UDim.new(0, 6)
+                        textbox_corner.Parent = design_textbox
 
-                        textbox.Name = "textbox"
-                        textbox.Parent = design_textbox
-                        textbox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                        textbox.BorderSizePixel = 0
-                        textbox.Position = UDim2.new(0, 1, 0, 1)
-                        textbox.Size = UDim2.new(0, 219, 0, 16)
-                        textbox.ClearTextOnFocus = Configuration_TextBox.ClearOnFocus
-                        textbox.Font = Enum.Font.Jura
-                        textbox.Text = tostring(Configuration_TextBox.Default)
-                        textbox.PlaceholderText = Configuration_TextBox.PlaceHolder
-                        textbox.PlaceholderColor3 = Color3.fromRGB(130, 130, 130)
-                        textbox.TextColor3 = Color3.fromRGB(220, 220, 220)
-                        textbox.TextSize = 12
-                        textbox.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
-                        textbox.TextStrokeTransparency = 0.35
-                        textbox.TextXAlignment = Enum.TextXAlignment.Left
-                        textbox.TextTruncate = Enum.TextTruncate.AtEnd
+                        textbox_stroke.Parent = design_textbox
+                        textbox_stroke.Color = Color3.fromRGB(62, 62, 70)
+                        textbox_stroke.Thickness = 1
+                        textbox_stroke.Transparency = 0.15
 
-                        gradient_textbox.Color = ColorSequence.new({
-                            ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 28, 28)),
-                            ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 22, 22))
-                        })
-                        gradient_textbox.Rotation = 90
-                        gradient_textbox.Parent = textbox
+                        box.Name = "textbox"
+                        box.Parent = design_textbox
+                        box.BackgroundTransparency = 1
+                        box.Position = UDim2.new(0, 10, 0, 0)
+                        box.Size = UDim2.new(1, -20, 1, 0)
+                        box.ClearTextOnFocus = false
+                        box.Font = Enum.Font.Gotham
+                        box.PlaceholderText = tostring(Configuration_TextBox.Default)
+                        box.Text = ""
+                        box.TextColor3 = Color3.fromRGB(232, 232, 238)
+                        box.PlaceholderColor3 = Color3.fromRGB(135, 135, 145)
+                        box.TextSize = 12
+                        box.TextXAlignment = Enum.TextXAlignment.Left
+                        box.TextTruncate = Enum.TextTruncate.AtEnd
 
-                        local function cleanInput(value)
-                            value = tostring(value or "")
+                        local function applyPattern(text)
+                            text = tostring(text or "")
                             local pattern = tostring(Configuration_TextBox.Pattern or ""):lower()
-                            if pattern == "lower" then
-                                value = value:lower()
-                            elseif pattern == "upper" then
-                                value = value:upper()
-                            elseif pattern == "number" or pattern == "numbers" or pattern == "numeric" then
-                                value = value:gsub("[^%d%.%-]", "")
+                            if pattern == "lower" or pattern == "lowercase" then
+                                return text:lower()
+                            elseif pattern == "upper" or pattern == "uppercase" then
+                                return text:upper()
+                            elseif pattern == "number" or pattern == "numeric" then
+                                return text:gsub("%D", "")
                             end
-                            return value
+                            return text
                         end
 
                         local function submit()
-                            textbox.Text = cleanInput(textbox.Text)
-                            pcall(Configuration_TextBox.Script, textbox.Text)
+                            local text = applyPattern(box.Text)
+                            box.Text = text
+                            pcall(Configuration_TextBox.Script, text)
                         end
 
-                        textbox.Focused:Connect(function()
-                            TweenService:Create(design_textbox, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                                BorderColor3 = Color3.fromRGB(111, 83, 177)
-                            }):Play()
-                            gradient_textbox.Color = ColorSequence.new({
-                                ColorSequenceKeypoint.new(0, Color3.fromRGB(34, 34, 34)),
-                                ColorSequenceKeypoint.new(1, Color3.fromRGB(26, 26, 26))
-                            })
+                        box.Focused:Connect(function()
+                            textbox_stroke.Color = Color3.fromRGB(125, 88, 220)
                         end)
-
-                        textbox.FocusLost:Connect(function(enterPressed)
-                            TweenService:Create(design_textbox, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                                BorderColor3 = Color3.fromRGB(65, 65, 65)
-                            }):Play()
-                            gradient_textbox.Color = ColorSequence.new({
-                                ColorSequenceKeypoint.new(0, Color3.fromRGB(28, 28, 28)),
-                                ColorSequenceKeypoint.new(1, Color3.fromRGB(22, 22, 22))
-                            })
-                            submit()
+                        box.FocusLost:Connect(function(enterPressed)
+                            textbox_stroke.Color = Color3.fromRGB(62, 62, 70)
+                            if enterPressed then
+                                submit()
+                            end
                         end)
 
                         updateSection()
@@ -1703,21 +1606,23 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
                             label_textbox.Text = tostring(new)
                         end
                         function TextBoxTools.SetInput(new)
-                            textbox.Text = cleanInput(new)
+                            box.Text = applyPattern(new)
                         end
                         function TextBoxTools.GetInput()
-                            return textbox.Text
+                            return box.Text
                         end
                         function TextBoxTools.Submit()
                             submit()
                         end
                         function TextBoxTools.ClearInput()
-                            textbox.Text = ""
+                            box.Text = ""
                         end
+                        SetLocalTextBoxText = function(new) label_textbox.Text = tostring(new) end
                         return TextBoxTools
                     end
-                    end
+                    SectionTools.CreateTextbox = SectionTools.CreateTextBox
                     function SectionTools:CreateKeybind(Configuration_Keybind)
+                        Configuration_Keybind = Configuration_Keybind or {}
                         Configuration_Keybind = {
                             Text = Configuration_Keybind.Text or "keybind",
                             Key = Configuration_Keybind.Key or Enum.KeyCode.P,
@@ -1897,6 +1802,7 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
                         return KeybindTools
                     end
                     function SectionTools:CreateCheck(Configuration_Check)
+                        Configuration_Check = Configuration_Check or {}
                         Configuration_Check = {
                             Text = Configuration_Check.Text or "check",
                             Script = Configuration_Check.Script or function()
@@ -2060,6 +1966,7 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
                         return CheckTools
                     end
                     function SectionTools:CreateLabel(Configuration_Label)
+                        Configuration_Label = Configuration_Label or {}
                         Configuration_Label = {
                             Text = Configuration_Label.Text or "label",
                             Alignment = Configuration_Label.Alignment or Enum.TextXAlignment.Left
@@ -2168,8 +2075,7 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
         end
         return Interface
     end
-    local selectedLowerSafe = string.lower(tostring(selectedLower or SelectedLibrary or ""))
-    if string.find(selectedLowerSafe, "notif", 1, true) then
+    if string.find(selectedLower, "notif", 1, true) then
         local notifications = Instance.new("ScreenGui")
         local layout_notifications = Instance.new("UIListLayout")
         local padding_notifications = Instance.new("UIPadding")
@@ -2299,4 +2205,6 @@ function bungiesLibrary.Load(selfOrSelectedLibrary, maybeSelectedLibrary)
         end
         return NotificationLibrary
     end
+end
+bungiesLibrary.__version = "hashui_full_v11_dropdown_textbox_loaderfix"
 return bungiesLibrary
