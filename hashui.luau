@@ -172,12 +172,13 @@ function bungiesLibrary.Load(SelectedLibrary)
 
             --// Hash Hub loading-screen style layer
             --// This only restyles the UI library. It does NOT add a loading screen.
+            --// v2: lighter controls so buttons/toggles/dropdowns do not look pitch black.
             local HashTheme = {
                 Background = Color3.fromRGB(24, 24, 24),
                 Background2 = Color3.fromRGB(20, 20, 20),
-                Background3 = Color3.fromRGB(28, 28, 32),
-                Stroke = Color3.fromRGB(50, 50, 58),
-                StrokeSoft = Color3.fromRGB(38, 38, 44),
+                Background3 = Color3.fromRGB(36, 36, 42),
+                Stroke = Color3.fromRGB(72, 72, 84),
+                StrokeSoft = Color3.fromRGB(48, 48, 56),
                 Text = Color3.fromRGB(205, 205, 205),
                 TextBright = Color3.fromRGB(232, 232, 238),
                 SubText = Color3.fromRGB(170, 170, 178),
@@ -223,7 +224,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                     oldStroke.Parent = object
                 end
                 oldStroke.Color = color or HashTheme.Stroke
-                oldStroke.Transparency = transparency or 0.35
+                oldStroke.Transparency = transparency or 0.22
                 oldStroke.Thickness = thickness or 1
             end
 
@@ -402,7 +403,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                         object.BackgroundColor3 = HashTheme.Background2
                         addCorner(object, 5)
                     elseif name == "button_dropdown_option" then
-                        object.BackgroundColor3 = Color3.fromRGB(26, 26, 31)
+                        object.BackgroundColor3 = Color3.fromRGB(38, 38, 45)
                         addCorner(object, 4)
                     elseif name == "selected_bar" then
                         object.BackgroundColor3 = HashTheme.Accent
@@ -961,8 +962,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         gradient_design_button.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                         }
                         gradient_design_button.Rotation = 90
                         gradient_design_button.Name = "gradient_design_button"
@@ -989,8 +990,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         gradient_design_button_2.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(42, 42, 49)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(37, 37, 44))
                         }
                         gradient_design_button_2.Rotation = 90
                         gradient_design_button_2.Name = "gradient_design_button"
@@ -1012,8 +1013,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button_2.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                                 }
                             end
                         )
@@ -1022,8 +1023,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(24, 24, 24)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(32, 32, 38)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                                 }
                             end
                         )
@@ -1031,14 +1032,14 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(47, 47, 47)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(42, 42, 42))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(59, 59, 69)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(51, 51, 60))
                                 }
                                 wait(.2)
                                 gradient_design_button.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(31, 31, 31)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(39, 39, 46)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(37, 37, 44))
                                 }
                             end
                         )
@@ -1113,8 +1114,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         gradient_design_button_toggle.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                         }
                         gradient_design_button_toggle.Rotation = 90
                         gradient_design_button_toggle.Name = "gradient_design_button_toggle"
@@ -1136,8 +1137,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         gradient_design_button_toggle_2.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                         }
                         gradient_design_button_toggle_2.Rotation = 90
                         gradient_design_button_toggle_2.Name = "gradient_design_button_toggle_2"
@@ -1161,8 +1162,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                                         ColorSequenceKeypoint.new(1.00, Color3.fromRGB(70, 53, 115))
                                     } or
                                     ColorSequence.new {
-                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                                     }
                                 gradient_design_button_toggle_2.Color = ToggleGradient
 
@@ -1185,8 +1186,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button_toggle.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                                 }
                             end
                         )
@@ -1243,7 +1244,7 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         design_dropdown.Name = "design_dropdown"
                         design_dropdown.Parent = holder_dropdown
-                        design_dropdown.BackgroundColor3 = Color3.fromRGB(25, 25, 29)
+                        design_dropdown.BackgroundColor3 = Color3.fromRGB(36, 36, 42)
                         design_dropdown.BorderSizePixel = 0
                         design_dropdown.ClipsDescendants = true
                         design_dropdown.Position = UDim2.new(0, 0, 0, 19)
@@ -1254,7 +1255,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                         dropdown_corner.Parent = design_dropdown
 
                         dropdown_stroke.Parent = design_dropdown
-                        dropdown_stroke.Color = Color3.fromRGB(62, 62, 70)
+                        dropdown_stroke.Color = Color3.fromRGB(82, 82, 94)
                         dropdown_stroke.Thickness = 1
                         dropdown_stroke.Transparency = 0.15
 
@@ -1292,7 +1293,7 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         dropdown_container.Name = "dropdown_container"
                         dropdown_container.Parent = design_dropdown
-                        dropdown_container.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+                        dropdown_container.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
                         dropdown_container.BorderSizePixel = 0
                         dropdown_container.Position = UDim2.new(0, 5, 0, 31)
                         dropdown_container.Size = UDim2.new(1, -10, 0, 0)
@@ -1362,7 +1363,7 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                             option_button.Name = "button_dropdown_option"
                             option_button.Parent = dropdown_container
-                            option_button.BackgroundColor3 = Color3.fromRGB(26, 26, 31)
+                            option_button.BackgroundColor3 = Color3.fromRGB(38, 38, 45)
                             option_button.BorderSizePixel = 0
                             option_button.Size = UDim2.new(1, -8, 0, 24)
                             option_button.Position = UDim2.new(0, 4, 0, 0)
@@ -1397,12 +1398,12 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                             option_button.MouseEnter:Connect(function()
                                 if selectedValue ~= option then
-                                    option_button.BackgroundColor3 = Color3.fromRGB(34, 34, 40)
+                                    option_button.BackgroundColor3 = Color3.fromRGB(48, 48, 56)
                                 end
                             end)
                             option_button.MouseLeave:Connect(function()
                                 if selectedValue ~= option then
-                                    option_button.BackgroundColor3 = Color3.fromRGB(26, 26, 31)
+                                    option_button.BackgroundColor3 = Color3.fromRGB(38, 38, 45)
                                 end
                             end)
                             option_button.MouseButton1Click:Connect(function()
@@ -1431,7 +1432,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                             dropdown_stroke.Color = Color3.fromRGB(125, 88, 220)
                         end)
                         button_dropdown.MouseLeave:Connect(function()
-                            dropdown_stroke.Color = Color3.fromRGB(62, 62, 70)
+                            dropdown_stroke.Color = Color3.fromRGB(82, 82, 94)
                         end)
 
                         for _, option in next, Configuration_Dropdown.Options do
@@ -1550,8 +1551,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_slider.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(42, 42, 49)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(37, 37, 44))
                         }
                         gradient_design_slider.Rotation = 90
                         gradient_design_slider.Name = "gradient_design_slider"
@@ -1571,8 +1572,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_button_slider.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                         }
                         gradient_button_slider.Rotation = 90
                         gradient_button_slider.Name = "gradient_button_slider"
@@ -1634,8 +1635,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_invisible_slider_cut.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                         }
                         gradient_invisible_slider_cut.Rotation = 90
                         gradient_invisible_slider_cut.Name = "gradient_invisible_slider_cut"
@@ -1664,8 +1665,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             function()
                                 gradient_design_slider.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(42, 42, 49)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(37, 37, 44))
                                 }
                             end
                         )
@@ -1877,7 +1878,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         design_textbox.Name = "design_textbox"
                         design_textbox.Parent = holder_textbox
-                        design_textbox.BackgroundColor3 = Color3.fromRGB(25, 25, 29)
+                        design_textbox.BackgroundColor3 = Color3.fromRGB(36, 36, 42)
                         design_textbox.BorderSizePixel = 0
                         design_textbox.Position = UDim2.new(0, 0, 0, 19)
                         design_textbox.Size = UDim2.new(0, 221, 0, 27)
@@ -1886,7 +1887,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         textbox_corner.Parent = design_textbox
 
                         textbox_stroke.Parent = design_textbox
-                        textbox_stroke.Color = Color3.fromRGB(62, 62, 70)
+                        textbox_stroke.Color = Color3.fromRGB(82, 82, 94)
                         textbox_stroke.Thickness = 1
                         textbox_stroke.Transparency = 0.15
 
@@ -1928,7 +1929,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             textbox_stroke.Color = Color3.fromRGB(125, 88, 220)
                         end)
                         box.FocusLost:Connect(function(enterPressed)
-                            textbox_stroke.Color = Color3.fromRGB(62, 62, 70)
+                            textbox_stroke.Color = Color3.fromRGB(82, 82, 94)
                             if enterPressed then
                                 submit()
                             end
@@ -2014,8 +2015,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_keybind_2.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                         }
                         gradient_design_keybind_2.Rotation = 90
                         gradient_design_keybind_2.Name = "gradient_design_keybind_2"
@@ -2036,8 +2037,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_textbox_3.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                         }
                         gradient_design_textbox_3.Rotation = 90
                         gradient_design_textbox_3.Name = "gradient_design_textbox_3"
@@ -2119,8 +2120,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             function()
                                 gradient_design_keybind_2.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                                 }
                             end
                         )
@@ -2196,8 +2197,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_button_toggle.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                         }
                         gradient_design_button_toggle.Rotation = 90
                         gradient_design_button_toggle.Name = "gradient_design_button_toggle"
@@ -2225,8 +2226,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_button_toggle_2.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                         }
                         gradient_design_button_toggle_2.Rotation = 90
                         gradient_design_button_toggle_2.Name = "gradient_design_button_toggle_2"
@@ -2250,8 +2251,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                                         ColorSequenceKeypoint.new(1.00, Color3.fromRGB(70, 53, 115))
                                     } or
                                     ColorSequence.new {
-                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                                     }
                                 gradient_design_button_toggle_2.Color = ToggleGradient
 
@@ -2276,8 +2277,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             function()
                                 gradient_design_button_toggle.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                                 }
                             end
                         )
@@ -2436,7 +2437,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
         local NotificationTheme = {
             Background = Color3.fromRGB(24, 24, 24),
             Background2 = Color3.fromRGB(20, 20, 20),
-            Stroke = Color3.fromRGB(50, 50, 58),
+            Stroke = Color3.fromRGB(72, 72, 84),
             Text = Color3.fromRGB(205, 205, 205),
             SubText = Color3.fromRGB(170, 170, 178),
             Accent = Color3.fromRGB(125, 95, 210)
