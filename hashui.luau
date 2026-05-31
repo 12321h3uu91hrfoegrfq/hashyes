@@ -160,25 +160,27 @@ function bungiesLibrary.Load(SelectedLibrary)
         function Interface:Start(Configuration)
             ui = true
             Configuration = Configuration or {}
+            local _HashInputConfiguration = Configuration
             Configuration = {
-                Header = Configuration.Header or "undefined header",
-                Footer = Configuration.Footer or
+                Header = _HashInputConfiguration.Header or "undefined header",
+                Footer = _HashInputConfiguration.Footer or
                     "undefined footer  |   " ..
                         game.Players.LocalPlayer.Name ..
                             " | " .. os.date("%d") .. "/" .. os.date("%m") .. "/" .. os.date("%Y"),
-                VisibleKeybind = Configuration.VisibleKeybind or Enum.KeyCode.RightAlt,
-                Version = Configuration.Version or "2.6.3"
+                VisibleKeybind = _HashInputConfiguration.VisibleKeybind or Enum.KeyCode.RightAlt,
+                Version = _HashInputConfiguration.Version or "2.6.3",
+                LoadingDuration = _HashInputConfiguration.LoadingDuration or _HashInputConfiguration.LoaderDuration or _HashInputConfiguration.IntroDuration or 8.5
             }
 
             --// Hash Hub loading-screen style layer
             --// This only restyles the UI library. It does NOT add a loading screen.
-            --// v3: loader-like morph animation, smoother open/close, brighter controls.
+            --// v2: lighter controls so buttons/toggles/dropdowns do not look pitch black.
             local HashTheme = {
                 Background = Color3.fromRGB(24, 24, 24),
-                Background2 = Color3.fromRGB(22, 22, 24),
-                Background3 = Color3.fromRGB(42, 42, 48),
-                Stroke = Color3.fromRGB(86, 86, 99),
-                StrokeSoft = Color3.fromRGB(54, 54, 62),
+                Background2 = Color3.fromRGB(20, 20, 20),
+                Background3 = Color3.fromRGB(36, 36, 42),
+                Stroke = Color3.fromRGB(72, 72, 84),
+                StrokeSoft = Color3.fromRGB(48, 48, 56),
                 Text = Color3.fromRGB(205, 205, 205),
                 TextBright = Color3.fromRGB(232, 232, 238),
                 SubText = Color3.fromRGB(170, 170, 178),
@@ -274,13 +276,11 @@ function bungiesLibrary.Load(SelectedLibrary)
                     if name == "design" then
                         object.BackgroundColor3 = HashTheme.Background
                         object.BorderSizePixel = 0
-                        object.ClipsDescendants = true
                         addCorner(object, 6)
                         addStroke(object, HashTheme.StrokeSoft, 0.45, 1)
                     elseif name == "design_1" or name == "background" then
                         object.BackgroundColor3 = HashTheme.Background
                         object.BorderSizePixel = 0
-                        object.ClipsDescendants = true
                         addCorner(object, 4)
                     elseif name == "container_tabs" then
                         object.BackgroundColor3 = HashTheme.Background
@@ -457,10 +457,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
             private.Name = genKey()
             private.Parent = CoreGuiService
-            private.IgnoreGuiInset = true
             private.ZIndexBehavior = Enum.ZIndexBehavior.Global
             private.ResetOnSpawn = false
-            private.DisplayOrder = 999998
 
             private.DescendantAdded:Connect(function(object)
                 task.defer(function()
@@ -491,61 +489,12 @@ function bungiesLibrary.Load(SelectedLibrary)
             local visKey = Configuration.VisibleKeybind
             local interfaceVisible = false
             local interfaceAnimating = false
+            local introFinished = false
+            local introEvent = Instance.new("BindableEvent")
             local interfacePosition = design.Position
-            local interfaceOpenSizes = {
-                Design = UDim2.new(0, 513, 0, 585),
-                DesignInner = UDim2.new(0, 509, 0, 581),
-                Background = UDim2.new(0, 505, 0, 577)
-            }
-            local interfaceClosedSizes = {
-                Design = UDim2.new(0, 513, 0, 112),
-                DesignInner = UDim2.new(0, 509, 0, 108),
-                Background = UDim2.new(0, 505, 0, 104)
-            }
-            local interfaceOpenInfo = TweenInfo.new(0.48, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-            local interfaceCloseInfo = TweenInfo.new(0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-            local interfaceFadeInfo = TweenInfo.new(0.22, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+            local interfaceTweenInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-            local function setContentVisible(state)
-                local objects = {container_tab_buttons, container_tabs, cut_tab_buttons, footer_label, cut_footer}
-                for _, object in ipairs(objects) do
-                    if object then
-                        object.Visible = state
-                    end
-                end
-            end
-
-            local function setShellTransparency(value)
-                design.BackgroundTransparency = value
-                design_1.BackgroundTransparency = value
-                background.BackgroundTransparency = value
-            end
-
-            local function resetShellSizes(opened)
-                if opened then
-                    design.Size = interfaceOpenSizes.Design
-                    design_1.Size = interfaceOpenSizes.DesignInner
-                    background.Size = interfaceOpenSizes.Background
-                else
-                    design.Size = interfaceClosedSizes.Design
-                    design_1.Size = interfaceClosedSizes.DesignInner
-                    background.Size = interfaceClosedSizes.Background
-                end
-            end
-
-            local function tweenShell(opened, tweenInfo)
-                TweenService:Create(design, tweenInfo, {
-                    Size = opened and interfaceOpenSizes.Design or interfaceClosedSizes.Design
-                }):Play()
-                TweenService:Create(design_1, tweenInfo, {
-                    Size = opened and interfaceOpenSizes.DesignInner or interfaceClosedSizes.DesignInner
-                }):Play()
-                TweenService:Create(background, tweenInfo, {
-                    Size = opened and interfaceOpenSizes.Background or interfaceClosedSizes.Background
-                }):Play()
-            end
-
-            local function setInterfaceVisible(state, instant)
+            local function setInterfaceVisible(state)
                 if interfaceAnimating or interfaceVisible == state then
                     return
                 end
@@ -556,77 +505,37 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                 if state then
                     design.Visible = true
-                    design.Position = interfacePosition
-                    designScale.Scale = instant and 1 or 0.91
-                    setContentVisible(false)
-                    resetShellSizes(false)
-                    setShellTransparency(instant and 0 or 1)
-                    header_label.TextTransparency = instant and 0 or 1
-                    footer_label.TextTransparency = 1
-                    cut_header.Size = UDim2.new(0, instant and 112 or 0, 0, 1)
-                    cut_header.BackgroundTransparency = instant and 0.25 or 1
+                    design.Position = interfacePosition + UDim2.new(0, 0, 0, 10)
+                    designScale.Scale = 0.94
+                    design.BackgroundTransparency = 0.25
 
-                    if instant then
-                        resetShellSizes(true)
-                        setContentVisible(true)
-                        footer_label.TextTransparency = 0
-                        interfaceAnimating = false
-                        return
-                    end
-
-                    TweenService:Create(designScale, interfaceOpenInfo, {Scale = 1}):Play()
-                    TweenService:Create(design, interfaceFadeInfo, {BackgroundTransparency = 0}):Play()
-                    TweenService:Create(design_1, interfaceFadeInfo, {BackgroundTransparency = 0}):Play()
-                    TweenService:Create(background, interfaceFadeInfo, {BackgroundTransparency = 0}):Play()
-                    TweenService:Create(header_label, interfaceFadeInfo, {TextTransparency = 0}):Play()
-                    TweenService:Create(cut_header, TweenInfo.new(0.36, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-                        Size = UDim2.new(0, 112, 0, 1),
-                        BackgroundTransparency = 0.25
+                    TweenService:Create(design, interfaceTweenInfo, {
+                        Position = interfacePosition,
+                        BackgroundTransparency = 0
                     }):Play()
 
-                    task.wait(0.18)
-                    tweenShell(true, interfaceOpenInfo)
-                    task.wait(0.24)
-                    setContentVisible(true)
-                    footer_label.TextTransparency = 1
-                    TweenService:Create(footer_label, TweenInfo.new(0.24, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                        TextTransparency = 0
-                    }):Play()
-                    task.wait(0.1)
+                    local scaleTween = TweenService:Create(designScale, interfaceTweenInfo, {
+                        Scale = 1
+                    })
+                    scaleTween:Play()
+                    scaleTween.Completed:Wait()
                     interfaceAnimating = false
                 else
-                    TweenService:Create(footer_label, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
-                        TextTransparency = 1
-                    }):Play()
-                    task.delay(0.10, function()
-                        if not interfaceVisible then
-                            setContentVisible(false)
-                        end
-                    end)
+                    local closeTween = TweenService:Create(design, interfaceTweenInfo, {
+                        Position = interfacePosition + UDim2.new(0, 0, 0, 10),
+                        BackgroundTransparency = 0.25
+                    })
 
-                    tweenShell(false, interfaceCloseInfo)
-                    task.wait(0.16)
-                    TweenService:Create(cut_header, TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
-                        Size = UDim2.new(0, 0, 0, 1),
-                        BackgroundTransparency = 1
+                    TweenService:Create(designScale, interfaceTweenInfo, {
+                        Scale = 0.94
                     }):Play()
-                    TweenService:Create(header_label, TweenInfo.new(0.20, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
-                        TextTransparency = 1
-                    }):Play()
-                    TweenService:Create(designScale, interfaceCloseInfo, {Scale = 0.91}):Play()
-                    TweenService:Create(design, interfaceCloseInfo, {BackgroundTransparency = 1}):Play()
-                    TweenService:Create(design_1, interfaceCloseInfo, {BackgroundTransparency = 1}):Play()
-                    local fadeTween = TweenService:Create(background, interfaceCloseInfo, {BackgroundTransparency = 1})
-                    fadeTween:Play()
-                    fadeTween.Completed:Wait()
+
+                    closeTween:Play()
+                    closeTween.Completed:Wait()
                     design.Visible = false
                     design.Position = interfacePosition
-                    resetShellSizes(false)
+                    design.BackgroundTransparency = 0
                     designScale.Scale = 1
-                    setShellTransparency(0)
-                    header_label.TextTransparency = 0
-                    cut_header.Size = UDim2.new(0, 112, 0, 1)
-                    cut_header.BackgroundTransparency = 0.25
                     interfaceAnimating = false
                 end
             end
@@ -637,6 +546,9 @@ function bungiesLibrary.Load(SelectedLibrary)
                         return
                     end
                     if i.KeyCode == visKey then
+                        if not introFinished then
+                            return
+                        end
                         setInterfaceVisible(not interfaceVisible)
                     end
                 end
@@ -762,19 +674,12 @@ function bungiesLibrary.Load(SelectedLibrary)
             layout_design.VerticalAlignment = Enum.VerticalAlignment.Center
 
             styleTree(private)
-            resetShellSizes(false)
-            setContentVisible(false)
-            setShellTransparency(1)
-            header_label.TextTransparency = 1
-            cut_header.Size = UDim2.new(0, 0, 0, 1)
-            cut_header.BackgroundTransparency = 1
+            --// Start fully hidden so the old/original shell never flashes on-screen.
             design.Visible = false
+            designScale.Scale = 1
 
-            --// Video-loader -> GUI morph intro
-            --// Starts as the exact loading-screen wipe/title, then expands into this styled GUI.
-            local introFinished = false
-            local introEvent = Instance.new("BindableEvent")
-
+            --// Integrated Hash Hub loader morph.
+            --// Flow: video-style wipe -> centered loader -> longer hold -> card expands -> GUI appears.
             local MorphTheme = {
                 Dark = Color3.fromRGB(25, 25, 25),
                 Dark2 = Color3.fromRGB(28, 28, 28),
@@ -843,6 +748,7 @@ function bungiesLibrary.Load(SelectedLibrary)
             morphCard.BorderSizePixel = 0
             morphCard.ClipsDescendants = true
             morphCard.ZIndex = 9009
+            addCorner(morphCard, 7)
 
             local morphStroke = Instance.new("UIStroke")
             morphStroke.Name = "MorphStroke"
@@ -911,46 +817,49 @@ function bungiesLibrary.Load(SelectedLibrary)
             morphSubtitle.TextYAlignment = Enum.TextYAlignment.Center
             morphSubtitle.ZIndex = 9011
 
-            local function playMorphIntro()
+            task.spawn(function()
+                -- Opening wipe from the loader code.
                 morphTween(morphOverlay, 0.42, {BackgroundTransparency = 0}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                morphTween(centerDark, 0.58, {Size = UDim2.fromScale(1.12, 1.15)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                morphTween(leftWhite, 0.58, {Position = UDim2.fromScale(-0.075, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                morphTween(leftPurple, 0.58, {Position = UDim2.fromScale(-0.25, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                morphTween(rightWhite, 0.58, {Position = UDim2.fromScale(1.075, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                local last = morphTween(rightPurple, 0.58, {Position = UDim2.fromScale(1.25, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                morphTween(centerDark, 0.72, {Size = UDim2.fromScale(1.12, 1.15)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                morphTween(leftWhite, 0.72, {Position = UDim2.fromScale(-0.075, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                morphTween(leftPurple, 0.72, {Position = UDim2.fromScale(-0.25, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                morphTween(rightWhite, 0.72, {Position = UDim2.fromScale(1.075, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                local last = morphTween(rightPurple, 0.72, {Position = UDim2.fromScale(1.25, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                 last.Completed:Wait()
 
                 morphBars.Visible = false
                 morphOverlay.BackgroundTransparency = 0
-                task.wait(0.05)
-
-                morphTween(morphCenter, 0.65, {Position = UDim2.fromScale(0.5, 0.505)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                morphTween(morphTitle, 0.48, {TextTransparency = 0}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
                 task.wait(0.12)
-                morphTween(morphUnderline, 0.42, {
+
+                morphTween(morphCenter, 0.75, {Position = UDim2.fromScale(0.5, 0.505)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                morphTween(morphTitle, 0.55, {TextTransparency = 0}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+                task.wait(0.16)
+                morphTween(morphUnderline, 0.52, {
                     Size = UDim2.fromOffset(165, 1),
                     BackgroundTransparency = 0.15
                 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                task.wait(0.08)
-                morphTween(morphSubtitle, 0.42, {TextTransparency = 0}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+                task.wait(0.12)
+                morphTween(morphSubtitle, 0.48, {TextTransparency = 0}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 
-                task.wait(0.90)
-                morphSubtitle.Text = 'loading <font color="rgb(120,94,190)">interface</font>...'
-                task.wait(0.22)
+                -- Longer loader hold. Default is 8.5s, customizable with UI:Start({LoadingDuration = number}).
+                local holdTime = tonumber(Configuration.LoadingDuration) or 8.5
+                local halfHold = math.max(0.35, holdTime * 0.55)
+                task.wait(halfHold)
+                if morphSubtitle and morphSubtitle.Parent then
+                    morphSubtitle.Text = 'loading <font color="rgb(120,94,190)">interface</font>...'
+                end
+                task.wait(math.max(0.35, holdTime - halfHold))
 
-                -- Build the morph card from the loader text block.
-                morphCard.Position = UDim2.fromScale(0.5, 0.505)
-                morphCard.Size = UDim2.fromOffset(420, 120)
-                morphCard.BackgroundTransparency = 0.10
-                morphStroke.Transparency = 0.45
-
-                morphTween(morphSubtitle, 0.22, {TextTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                morphTween(morphTitle, 0.28, {TextTransparency = 0.35}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                morphTween(morphScale, 0.50, {Scale = 1}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-                morphTween(morphCenter, 0.50, {Position = UDim2.fromScale(0.5, 0.315)}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-                morphTween(morphUnderline, 0.50, {
+                -- Make the loader become a dark card, then open the actual GUI underneath it.
+                morphCard.BackgroundTransparency = 0.08
+                morphStroke.Transparency = 0.42
+                morphTween(morphSubtitle, 0.28, {TextTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                morphTween(morphTitle, 0.36, {TextTransparency = 0.18}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                morphTween(morphScale, 0.65, {Scale = 1}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                morphTween(morphCenter, 0.65, {Position = UDim2.fromScale(0.5, 0.135)}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                morphTween(morphUnderline, 0.65, {
                     Size = UDim2.fromOffset(112, 1),
-                    BackgroundTransparency = 0.25
+                    BackgroundTransparency = 0.22
                 }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
 
                 task.wait(0.08)
@@ -958,18 +867,17 @@ function bungiesLibrary.Load(SelectedLibrary)
                     setInterfaceVisible(true)
                 end)
 
-                local cardTween = morphTween(morphCard, 0.78, {
-                    Size = interfaceOpenSizes.Design,
-                    Position = interfacePosition,
-                    BackgroundTransparency = 0.88
+                local cardTween = morphTween(morphCard, 0.86, {
+                    Size = UDim2.new(0, 513, 0, 585),
+                    Position = design.Position,
+                    BackgroundTransparency = 0.92
                 }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-
-                morphTween(morphStroke, 0.52, {Transparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                morphTween(morphStroke, 0.55, {Transparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
                 cardTween.Completed:Wait()
 
-                morphTween(morphTitle, 0.24, {TextTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                morphTween(morphUnderline, 0.24, {BackgroundTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                local out = morphTween(morphOverlay, 0.48, {BackgroundTransparency = 1}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                morphTween(morphTitle, 0.28, {TextTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                morphTween(morphUnderline, 0.28, {BackgroundTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                local out = morphTween(morphOverlay, 0.58, {BackgroundTransparency = 1}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
                 out.Completed:Wait()
 
                 if morphOverlay and morphOverlay.Parent then
@@ -978,9 +886,7 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                 introFinished = true
                 introEvent:Fire()
-            end
-
-            task.spawn(playMorphIntro)
+            end)
 
             local InterfaceTools = {}
             local isFirstPageAdded = true
@@ -1110,8 +1016,6 @@ function bungiesLibrary.Load(SelectedLibrary)
                 if isFirstPageAdded then
                     PageIsVisible = true
                     tab.Visible = true
-                    tab.Position = UDim2.new(0, 0, 0, 8)
-                    TweenService:Create(tab, TweenInfo.new(0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)}):Play()
                     button_tab.BackgroundColor3 = HashTheme.Background
                     button_tab.BackgroundTransparency = 1
                     button_tab.TextColor3 = HashTheme.Text
@@ -1146,8 +1050,6 @@ function bungiesLibrary.Load(SelectedLibrary)
                             end
                         end
                         tab.Visible = true
-                        tab.Position = UDim2.new(0, 0, 0, 8)
-                        TweenService:Create(tab, TweenInfo.new(0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)}):Play()
                         button_tab.BackgroundColor3 = HashTheme.Background
                         button_tab.BackgroundTransparency = 1
                         button_tab.TextColor3 = HashTheme.Text
@@ -2724,19 +2626,29 @@ function SectionTools:CreateSlider(Configuration_Slider)
             function InterfaceTools.SetVisibleKeybind(new)
                 visKey = new
             end
+            function InterfaceTools.WaitForIntro()
+                if introFinished then
+                    return
+                end
+                introEvent.Event:Wait()
+            end
             function InterfaceTools.Show()
+                if not introFinished then
+                    InterfaceTools.WaitForIntro()
+                end
                 setInterfaceVisible(true)
             end
             function InterfaceTools.Hide()
+                if not introFinished then
+                    return
+                end
                 setInterfaceVisible(false)
             end
             function InterfaceTools.Toggle()
-                setInterfaceVisible(not interfaceVisible)
-            end
-            function InterfaceTools.WaitForIntro()
                 if not introFinished then
-                    introEvent.Event:Wait()
+                    return
                 end
+                setInterfaceVisible(not interfaceVisible)
             end
             function InterfaceTools.Destroy()
                 if private and private.Parent then
