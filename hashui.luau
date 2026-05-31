@@ -166,8 +166,276 @@ function bungiesLibrary.Load(SelectedLibrary)
                     "undefined footer  |   " ..
                         game.Players.LocalPlayer.Name ..
                             " | " .. os.date("%d") .. "/" .. os.date("%m") .. "/" .. os.date("%Y"),
-                VisibleKeybind = Configuration.VisibleKeybind or Enum.KeyCode.RightAlt
+                VisibleKeybind = Configuration.VisibleKeybind or Enum.KeyCode.RightAlt,
+                Version = Configuration.Version or "2.6.3"
             }
+
+            --// Hash Hub loading-screen style layer
+            --// This only restyles the UI library. It does NOT add a loading screen.
+            --// v3: loader-like morph animation, smoother open/close, brighter controls.
+            local HashTheme = {
+                Background = Color3.fromRGB(24, 24, 24),
+                Background2 = Color3.fromRGB(22, 22, 24),
+                Background3 = Color3.fromRGB(42, 42, 48),
+                Stroke = Color3.fromRGB(86, 86, 99),
+                StrokeSoft = Color3.fromRGB(54, 54, 62),
+                Text = Color3.fromRGB(205, 205, 205),
+                TextBright = Color3.fromRGB(232, 232, 238),
+                SubText = Color3.fromRGB(170, 170, 178),
+                Muted = Color3.fromRGB(125, 125, 135),
+                Accent = Color3.fromRGB(125, 95, 210),
+                AccentDim = Color3.fromRGB(88, 70, 150)
+            }
+
+            local function escapeRich(text)
+                text = tostring(text or "")
+                text = text:gsub("&", "&amp;")
+                text = text:gsub("<", "&lt;")
+                text = text:gsub(">", "&gt;")
+                return text
+            end
+
+            local function hashTitle(text, version)
+                local base = tostring(text or "hash hub")
+                if base == "" or string.lower(base) == "hash hub" or string.lower(base) == "hashhub" then
+                    base = "hash hub"
+                end
+                return escapeRich(string.lower(base)) .. ' <font color="rgb(125,95,210)">[' .. escapeRich(version or "2.6.3") .. ']</font>'
+            end
+
+            local function addCorner(object, radius)
+                if not object or not object:IsA("GuiObject") then return end
+                local oldCorner = object:FindFirstChild("hashhub_corner")
+                if not oldCorner then
+                    oldCorner = Instance.new("UICorner")
+                    oldCorner.Name = "hashhub_corner"
+                    oldCorner.Parent = object
+                end
+                oldCorner.CornerRadius = UDim.new(0, radius or 4)
+            end
+
+            local function addStroke(object, color, transparency, thickness)
+                if not object or not object:IsA("GuiObject") then return end
+                local oldStroke = object:FindFirstChild("hashhub_stroke")
+                if not oldStroke then
+                    oldStroke = Instance.new("UIStroke")
+                    oldStroke.Name = "hashhub_stroke"
+                    oldStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                    oldStroke.Parent = object
+                end
+                oldStroke.Color = color or HashTheme.Stroke
+                oldStroke.Transparency = transparency or 0.22
+                oldStroke.Thickness = thickness or 1
+            end
+
+            local function setGradient(gradient, top, bottom)
+                if gradient and gradient:IsA("UIGradient") then
+                    gradient.Color = ColorSequence.new({
+                        ColorSequenceKeypoint.new(0.00, top),
+                        ColorSequenceKeypoint.new(1.00, bottom)
+                    })
+                    gradient.Rotation = 90
+                end
+            end
+
+            local function styleText(object)
+                if object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox") then
+                    object.Font = Enum.Font.Gotham
+                    object.TextColor3 = HashTheme.Text
+                    object.TextStrokeTransparency = 1
+                    object.BorderSizePixel = 0
+                    if object:IsA("TextButton") then
+                        object.AutoButtonColor = false
+                    end
+                end
+            end
+
+            local function styleObject(object)
+                if not object then return end
+                pcall(function()
+                    local name = object.Name
+
+                    styleText(object)
+
+                    if object:IsA("Frame") or object:IsA("ScrollingFrame") or object:IsA("TextButton") or object:IsA("TextBox") then
+                        object.BorderSizePixel = 0
+                    end
+
+                    if object:IsA("UIGradient") then
+                        setGradient(object, HashTheme.Background3, HashTheme.Background2)
+                    end
+
+                    if object:IsA("ImageLabel") or object:IsA("ImageButton") then
+                        object.ImageColor3 = HashTheme.SubText
+                        object.BackgroundTransparency = 1
+                    end
+
+                    -- main shell
+                    if name == "design" then
+                        object.BackgroundColor3 = HashTheme.Background
+                        object.BorderSizePixel = 0
+                        object.ClipsDescendants = true
+                        addCorner(object, 6)
+                        addStroke(object, HashTheme.StrokeSoft, 0.45, 1)
+                    elseif name == "design_1" or name == "background" then
+                        object.BackgroundColor3 = HashTheme.Background
+                        object.BorderSizePixel = 0
+                        object.ClipsDescendants = true
+                        addCorner(object, 4)
+                    elseif name == "container_tabs" then
+                        object.BackgroundColor3 = HashTheme.Background
+                        object.BorderSizePixel = 0
+                        object.Position = UDim2.new(0, 0, 0, 76)
+                        object.Size = UDim2.new(0, 504, 0, 477)
+                    elseif name == "tab" then
+                        object.BackgroundTransparency = 1
+                        object.Size = UDim2.new(1, 0, 1, 0)
+                    elseif name == "container_component_left" or name == "container_component_right" then
+                        object.BackgroundTransparency = 1
+                        object.BorderSizePixel = 0
+                        object.ScrollBarThickness = 0
+                        object.Size = UDim2.new(0, 252, 1, 0)
+                    elseif name == "container_tab_buttons" then
+                        object.BackgroundColor3 = HashTheme.Background
+                        object.BorderSizePixel = 0
+                        object.Position = UDim2.new(0, 0, 0, 42)
+                        object.Size = UDim2.new(0, 505, 0, 30)
+                    elseif name == "cut_tab_buttons" then
+                        object.BackgroundColor3 = HashTheme.StrokeSoft
+                        object.BackgroundTransparency = 0.15
+                        object.Position = UDim2.new(0, 0, 0, 73)
+                        object.Size = UDim2.new(0, 505, 0, 1)
+                    elseif name == "cut_header" then
+                        object.AnchorPoint = Vector2.new(0.5, 0.5)
+                        object.Position = UDim2.new(0.5, 0, 0, 36)
+                        object.Size = UDim2.new(0, 112, 0, 1)
+                        object.BackgroundColor3 = HashTheme.Accent
+                        object.BackgroundTransparency = 0.25
+                        object.BorderSizePixel = 0
+                    elseif name == "cut_footer" then
+                        object.BackgroundColor3 = HashTheme.StrokeSoft
+                        object.BackgroundTransparency = 0.35
+                    end
+
+                    -- title / footer
+                    if name == "header_label" and object:IsA("TextLabel") then
+                        object.BackgroundTransparency = 1
+                        object.Position = UDim2.new(0, 0, 0, 7)
+                        object.Size = UDim2.new(0, 505, 0, 28)
+                        object.Font = Enum.Font.Gotham
+                        object.TextSize = 25
+                        object.RichText = true
+                        object.Text = hashTitle(Configuration.Header, Configuration.Version)
+                        object.TextColor3 = HashTheme.Text
+                        object.TextXAlignment = Enum.TextXAlignment.Center
+                        object.TextYAlignment = Enum.TextYAlignment.Center
+                        object.TextStrokeTransparency = 1
+                    elseif name == "footer_label" and object:IsA("TextLabel") then
+                        object.BackgroundTransparency = 1
+                        object.Font = Enum.Font.Gotham
+                        object.TextSize = 12
+                        object.TextColor3 = HashTheme.SubText
+                        object.TextXAlignment = Enum.TextXAlignment.Center
+                        object.TextStrokeTransparency = 1
+                    end
+
+                    -- tabs
+                    if name == "button_tab" and object:IsA("TextButton") then
+                        object.BackgroundColor3 = HashTheme.Background
+                        object.BackgroundTransparency = 1
+                        object.TextColor3 = HashTheme.SubText
+                        object.TextStrokeTransparency = 1
+                        object.Font = Enum.Font.Gotham
+                        object.TextSize = 13
+                        addCorner(object, 4)
+                    elseif name == "cut_button_tab" then
+                        object.BackgroundColor3 = HashTheme.Accent
+                        object.BackgroundTransparency = 0.15
+                    end
+
+                    -- sections
+                    if name == "section" then
+                        object.BackgroundColor3 = HashTheme.Background2
+                        object.BorderSizePixel = 0
+                        addCorner(object, 5)
+                        addStroke(object, HashTheme.StrokeSoft, 0.55, 1)
+                    elseif name == "section_design" then
+                        object.BackgroundColor3 = HashTheme.Accent
+                        object.BackgroundTransparency = 0.05
+                    elseif name == "section_header" and object:IsA("TextLabel") then
+                        object.Font = Enum.Font.GothamMedium
+                        object.TextSize = 13
+                        object.TextColor3 = HashTheme.TextBright
+                        object.TextStrokeTransparency = 1
+                    end
+
+                    -- old style buttons / checks / toggles
+                    if name == "design_button" or name == "design_dropdown" or name == "design_slider" or name == "design_textbox" or name == "design_keybind_2" or name == "design_textbox_3" then
+                        object.BackgroundColor3 = HashTheme.Background3
+                        object.BorderSizePixel = 0
+                        addCorner(object, 5)
+                        addStroke(object, HashTheme.Stroke, 0.35, 1)
+                    elseif name == "button" or name == "button_dropdown" or name == "button_slider" or name == "button_keybind" or name == "textbox" then
+                        object.BackgroundColor3 = HashTheme.Background3
+                        object.BorderSizePixel = 0
+                        addCorner(object, 4)
+                    elseif name == "button_text" or name == "button_dropdown_text" or name == "button_slider_value" then
+                        object.Font = Enum.Font.Gotham
+                        object.TextColor3 = HashTheme.TextBright
+                        object.TextStrokeTransparency = 1
+                    end
+
+                    if name == "button_toggle" and object:IsA("TextButton") then
+                        object.Font = Enum.Font.Gotham
+                        object.TextColor3 = HashTheme.Text
+                        object.TextStrokeTransparency = 1
+                    elseif name == "design_button_toggle" then
+                        object.BackgroundColor3 = HashTheme.Background3
+                        addCorner(object, 100)
+                        addStroke(object, HashTheme.Stroke, 0.3, 1)
+                    elseif name == "design_button_toggle_2" then
+                        object.BackgroundColor3 = HashTheme.Background2
+                        addCorner(object, 100)
+                    end
+
+                    -- modern dropdown/textbox pieces already present in this file
+                    if name == "holder_dropdown" or name == "holder_textbox" or name == "holder_slider" or name == "holder_label" or name == "holder_cut" then
+                        object.BackgroundTransparency = 1
+                    elseif name == "dropdown_container" then
+                        object.BackgroundColor3 = HashTheme.Background2
+                        addCorner(object, 5)
+                    elseif name == "button_dropdown_option" then
+                        object.BackgroundColor3 = Color3.fromRGB(38, 38, 45)
+                        addCorner(object, 4)
+                    elseif name == "selected_bar" then
+                        object.BackgroundColor3 = HashTheme.Accent
+                    end
+
+                    if name == "label_dropdown" or name == "label_textbox" or name == "label_holder_slider" or name == "label_keybind" or name == "label" then
+                        object.Font = Enum.Font.Gotham
+                        object.TextColor3 = HashTheme.Text
+                        object.TextStrokeTransparency = 1
+                    end
+
+                    if name == "design_2_slider" or name == "invisible_slider_cut" then
+                        object.BackgroundColor3 = HashTheme.Accent
+                        object.BorderSizePixel = 0
+                        addCorner(object, 100)
+                    end
+
+                    if name == "cut" then
+                        object.BackgroundColor3 = HashTheme.StrokeSoft
+                        object.BackgroundTransparency = 0.1
+                    end
+                end)
+            end
+
+            local function styleTree(root)
+                styleObject(root)
+                for _, child in next, root:GetDescendants() do
+                    styleObject(child)
+                end
+            end
 
             local private = Instance.new("ScreenGui")
             local design = Instance.new("Frame")
@@ -188,11 +456,17 @@ function bungiesLibrary.Load(SelectedLibrary)
             local layout_design = Instance.new("UIListLayout")
 
             private.Name = genKey()
-            private.IgnoreGuiInset = true
-            private.ResetOnSpawn = false
-            private.ZIndexBehavior = Enum.ZIndexBehavior.Global
-            private.DisplayOrder = 999998
             private.Parent = CoreGuiService
+            private.IgnoreGuiInset = true
+            private.ZIndexBehavior = Enum.ZIndexBehavior.Global
+            private.ResetOnSpawn = false
+            private.DisplayOrder = 999998
+
+            private.DescendantAdded:Connect(function(object)
+                task.defer(function()
+                    styleObject(object)
+                end)
+            end)
 
             design.Name = "design"
             design.Parent = private
@@ -215,58 +489,144 @@ function bungiesLibrary.Load(SelectedLibrary)
                 }
             )
             local visKey = Configuration.VisibleKeybind
-            local interfaceVisible = true
-            local interfaceAnimating = true
-            local introDone = false
+            local interfaceVisible = false
+            local interfaceAnimating = false
             local interfacePosition = design.Position
-            local interfaceTweenInfo = TweenInfo.new(0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+            local interfaceOpenSizes = {
+                Design = UDim2.new(0, 513, 0, 585),
+                DesignInner = UDim2.new(0, 509, 0, 581),
+                Background = UDim2.new(0, 505, 0, 577)
+            }
+            local interfaceClosedSizes = {
+                Design = UDim2.new(0, 513, 0, 112),
+                DesignInner = UDim2.new(0, 509, 0, 108),
+                Background = UDim2.new(0, 505, 0, 104)
+            }
+            local interfaceOpenInfo = TweenInfo.new(0.48, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+            local interfaceCloseInfo = TweenInfo.new(0.34, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+            local interfaceFadeInfo = TweenInfo.new(0.22, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 
-            design.Visible = true
-            design.ClipsDescendants = true
-            design.BackgroundTransparency = 1
-            designScale.Scale = 0.92
+            local function setContentVisible(state)
+                local objects = {container_tab_buttons, container_tabs, cut_tab_buttons, footer_label, cut_footer}
+                for _, object in ipairs(objects) do
+                    if object then
+                        object.Visible = state
+                    end
+                end
+            end
 
-            local function setInterfaceVisible(state)
-                if interfaceAnimating or interfaceVisible == state or not introDone then
+            local function setShellTransparency(value)
+                design.BackgroundTransparency = value
+                design_1.BackgroundTransparency = value
+                background.BackgroundTransparency = value
+            end
+
+            local function resetShellSizes(opened)
+                if opened then
+                    design.Size = interfaceOpenSizes.Design
+                    design_1.Size = interfaceOpenSizes.DesignInner
+                    background.Size = interfaceOpenSizes.Background
+                else
+                    design.Size = interfaceClosedSizes.Design
+                    design_1.Size = interfaceClosedSizes.DesignInner
+                    background.Size = interfaceClosedSizes.Background
+                end
+            end
+
+            local function tweenShell(opened, tweenInfo)
+                TweenService:Create(design, tweenInfo, {
+                    Size = opened and interfaceOpenSizes.Design or interfaceClosedSizes.Design
+                }):Play()
+                TweenService:Create(design_1, tweenInfo, {
+                    Size = opened and interfaceOpenSizes.DesignInner or interfaceClosedSizes.DesignInner
+                }):Play()
+                TweenService:Create(background, tweenInfo, {
+                    Size = opened and interfaceOpenSizes.Background or interfaceClosedSizes.Background
+                }):Play()
+            end
+
+            local function setInterfaceVisible(state, instant)
+                if interfaceAnimating or interfaceVisible == state then
                     return
                 end
 
+                interfacePosition = design.Position
                 interfaceAnimating = true
                 interfaceVisible = state
 
                 if state then
                     design.Visible = true
-                    design.Position = interfacePosition + UDim2.new(0, 0, 0, 18)
-                    designScale.Scale = 0.90
-                    design.BackgroundTransparency = 0.2
+                    design.Position = interfacePosition
+                    designScale.Scale = instant and 1 or 0.91
+                    setContentVisible(false)
+                    resetShellSizes(false)
+                    setShellTransparency(instant and 0 or 1)
+                    header_label.TextTransparency = instant and 0 or 1
+                    footer_label.TextTransparency = 1
+                    cut_header.Size = UDim2.new(0, instant and 112 or 0, 0, 1)
+                    cut_header.BackgroundTransparency = instant and 0.25 or 1
 
-                    TweenService:Create(design, interfaceTweenInfo, {
-                        Position = interfacePosition,
-                        BackgroundTransparency = 0
+                    if instant then
+                        resetShellSizes(true)
+                        setContentVisible(true)
+                        footer_label.TextTransparency = 0
+                        interfaceAnimating = false
+                        return
+                    end
+
+                    TweenService:Create(designScale, interfaceOpenInfo, {Scale = 1}):Play()
+                    TweenService:Create(design, interfaceFadeInfo, {BackgroundTransparency = 0}):Play()
+                    TweenService:Create(design_1, interfaceFadeInfo, {BackgroundTransparency = 0}):Play()
+                    TweenService:Create(background, interfaceFadeInfo, {BackgroundTransparency = 0}):Play()
+                    TweenService:Create(header_label, interfaceFadeInfo, {TextTransparency = 0}):Play()
+                    TweenService:Create(cut_header, TweenInfo.new(0.36, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                        Size = UDim2.new(0, 112, 0, 1),
+                        BackgroundTransparency = 0.25
                     }):Play()
 
-                    local scaleTween = TweenService:Create(designScale, interfaceTweenInfo, {
-                        Scale = 1
-                    })
-                    scaleTween:Play()
-                    scaleTween.Completed:Wait()
+                    task.wait(0.18)
+                    tweenShell(true, interfaceOpenInfo)
+                    task.wait(0.24)
+                    setContentVisible(true)
+                    footer_label.TextTransparency = 1
+                    TweenService:Create(footer_label, TweenInfo.new(0.24, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                        TextTransparency = 0
+                    }):Play()
+                    task.wait(0.1)
                     interfaceAnimating = false
                 else
-                    local closeTween = TweenService:Create(design, TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
-                        Position = interfacePosition + UDim2.new(0, 0, 0, 16),
-                        BackgroundTransparency = 0.25
-                    })
-
-                    TweenService:Create(designScale, TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut), {
-                        Scale = 0.90
+                    TweenService:Create(footer_label, TweenInfo.new(0.12, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+                        TextTransparency = 1
                     }):Play()
+                    task.delay(0.10, function()
+                        if not interfaceVisible then
+                            setContentVisible(false)
+                        end
+                    end)
 
-                    closeTween:Play()
-                    closeTween.Completed:Wait()
+                    tweenShell(false, interfaceCloseInfo)
+                    task.wait(0.16)
+                    TweenService:Create(cut_header, TweenInfo.new(0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
+                        Size = UDim2.new(0, 0, 0, 1),
+                        BackgroundTransparency = 1
+                    }):Play()
+                    TweenService:Create(header_label, TweenInfo.new(0.20, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+                        TextTransparency = 1
+                    }):Play()
+                    TweenService:Create(designScale, interfaceCloseInfo, {Scale = 0.91}):Play()
+                    TweenService:Create(design, interfaceCloseInfo, {BackgroundTransparency = 1}):Play()
+                    TweenService:Create(design_1, interfaceCloseInfo, {BackgroundTransparency = 1}):Play()
+                    local fadeTween = TweenService:Create(background, interfaceCloseInfo, {BackgroundTransparency = 1})
+                    fadeTween:Play()
+                    fadeTween.Completed:Wait()
                     design.Visible = false
                     design.Position = interfacePosition
-                    design.BackgroundTransparency = 0
+                    resetShellSizes(false)
                     designScale.Scale = 1
+                    setShellTransparency(0)
+                    header_label.TextTransparency = 0
+                    cut_header.Size = UDim2.new(0, 112, 0, 1)
+                    cut_header.BackgroundTransparency = 0.25
                     interfaceAnimating = false
                 end
             end
@@ -318,7 +678,8 @@ function bungiesLibrary.Load(SelectedLibrary)
             header_label.Size = UDim2.new(0, 505, 0, 19)
             header_label.Font = Enum.Font.Jura
             header_label.LineHeight = 1.150
-            header_label.Text = Configuration.Header
+            header_label.RichText = true
+            header_label.Text = hashTitle(Configuration.Header, Configuration.Version)
             header_label.TextColor3 = Color3.fromRGB(232, 232, 232)
             header_label.TextSize = 16.000
             header_label.TextStrokeColor3 = Color3.fromRGB(16, 16, 16)
@@ -400,21 +761,28 @@ function bungiesLibrary.Load(SelectedLibrary)
             layout_design.SortOrder = Enum.SortOrder.LayoutOrder
             layout_design.VerticalAlignment = Enum.VerticalAlignment.Center
 
-            --// Hash Hub loader -> GUI morph intro
-            --// This is the video-style loading screen built directly into the UI library.
-            --// It does not create a separate loader ScreenGui; it morphs into the main GUI.
-            local MORPH_VERSION = tostring(Configuration.Version or "2.6.3")
-            local MORPH_DARK = Color3.fromRGB(25, 25, 25)
-            local MORPH_DARK_2 = Color3.fromRGB(28, 28, 28)
-            local MORPH_PURPLE = Color3.fromRGB(120, 94, 190)
-            local MORPH_WHITE = Color3.fromRGB(242, 242, 242)
-            local MORPH_TEXT = Color3.fromRGB(205, 205, 210)
-            local MORPH_MUTED = Color3.fromRGB(170, 170, 178)
-            local MORPH_CENTER_SCALE = 1.65
-            local MORPH_TITLE_SIZE = 28
-            local MORPH_SUBTITLE_SIZE = 13
-            local MORPH_UNDERLINE_WIDTH = 165
-            local playerName = (Player and (Player.DisplayName ~= "" and Player.DisplayName or Player.Name)) or "player"
+            styleTree(private)
+            resetShellSizes(false)
+            setContentVisible(false)
+            setShellTransparency(1)
+            header_label.TextTransparency = 1
+            cut_header.Size = UDim2.new(0, 0, 0, 1)
+            cut_header.BackgroundTransparency = 1
+            design.Visible = false
+
+            --// Video-loader -> GUI morph intro
+            --// Starts as the exact loading-screen wipe/title, then expands into this styled GUI.
+            local introFinished = false
+            local introEvent = Instance.new("BindableEvent")
+
+            local MorphTheme = {
+                Dark = Color3.fromRGB(25, 25, 25),
+                Dark2 = Color3.fromRGB(28, 28, 28),
+                Purple = Color3.fromRGB(120, 94, 190),
+                White = Color3.fromRGB(242, 242, 242),
+                Text = Color3.fromRGB(205, 205, 210),
+                Muted = Color3.fromRGB(170, 170, 178)
+            }
 
             local function morphTween(obj, time, props, style, dir)
                 local tw = TweenService:Create(
@@ -427,11 +795,11 @@ function bungiesLibrary.Load(SelectedLibrary)
             end
 
             local morphOverlay = Instance.new("Frame")
-            morphOverlay.Name = "HashHubMorphLoader"
+            morphOverlay.Name = "HashHubMorphOverlay"
             morphOverlay.Parent = private
             morphOverlay.Size = UDim2.fromScale(1, 1)
             morphOverlay.Position = UDim2.fromScale(0, 0)
-            morphOverlay.BackgroundColor3 = MORPH_DARK
+            morphOverlay.BackgroundColor3 = MorphTheme.Dark
             morphOverlay.BackgroundTransparency = 1
             morphOverlay.BorderSizePixel = 0
             morphOverlay.ZIndex = 9000
@@ -458,11 +826,11 @@ function bungiesLibrary.Load(SelectedLibrary)
                 return frame
             end
 
-            local leftPurple = makeMorphBar("LeftPurple", MORPH_PURPLE, 0.34, 0.14, 9006)
-            local leftWhite = makeMorphBar("LeftWhite", MORPH_WHITE, 0.45, 0.072, 9007)
-            local centerDark = makeMorphBar("CenterDark", MORPH_DARK_2, 0.50, 0.11, 9008)
-            local rightWhite = makeMorphBar("RightWhite", MORPH_WHITE, 0.55, 0.072, 9007)
-            local rightPurple = makeMorphBar("RightPurple", MORPH_PURPLE, 0.66, 0.14, 9006)
+            local leftPurple = makeMorphBar("LeftPurple", MorphTheme.Purple, 0.34, 0.14, 9006)
+            local leftWhite = makeMorphBar("LeftWhite", MorphTheme.White, 0.45, 0.072, 9007)
+            local centerDark = makeMorphBar("CenterDark", MorphTheme.Dark2, 0.50, 0.11, 9008)
+            local rightWhite = makeMorphBar("RightWhite", MorphTheme.White, 0.55, 0.072, 9007)
+            local rightPurple = makeMorphBar("RightPurple", MorphTheme.Purple, 0.66, 0.14, 9006)
 
             local morphCard = Instance.new("Frame")
             morphCard.Name = "MorphCard"
@@ -470,17 +838,18 @@ function bungiesLibrary.Load(SelectedLibrary)
             morphCard.AnchorPoint = Vector2.new(0.5, 0.5)
             morphCard.Position = UDim2.fromScale(0.5, 0.505)
             morphCard.Size = UDim2.fromOffset(420, 120)
-            morphCard.BackgroundColor3 = MORPH_DARK_2
+            morphCard.BackgroundColor3 = MorphTheme.Dark2
             morphCard.BackgroundTransparency = 1
             morphCard.BorderSizePixel = 0
             morphCard.ClipsDescendants = true
             morphCard.ZIndex = 9009
 
-            local morphCardStroke = Instance.new("UIStroke")
-            morphCardStroke.Parent = morphCard
-            morphCardStroke.Color = Color3.fromRGB(58, 58, 62)
-            morphCardStroke.Thickness = 1
-            morphCardStroke.Transparency = 1
+            local morphStroke = Instance.new("UIStroke")
+            morphStroke.Name = "MorphStroke"
+            morphStroke.Parent = morphCard
+            morphStroke.Color = Color3.fromRGB(58, 58, 66)
+            morphStroke.Thickness = 1
+            morphStroke.Transparency = 1
 
             local morphCenter = Instance.new("Frame")
             morphCenter.Name = "CenterText"
@@ -494,7 +863,7 @@ function bungiesLibrary.Load(SelectedLibrary)
             local morphScale = Instance.new("UIScale")
             morphScale.Name = "CenterScale"
             morphScale.Parent = morphCenter
-            morphScale.Scale = MORPH_CENTER_SCALE
+            morphScale.Scale = 1.65
 
             local morphTitle = Instance.new("TextLabel")
             morphTitle.Name = "Title"
@@ -504,10 +873,10 @@ function bungiesLibrary.Load(SelectedLibrary)
             morphTitle.Size = UDim2.fromOffset(420, 34)
             morphTitle.BackgroundTransparency = 1
             morphTitle.Font = Enum.Font.Gotham
-            morphTitle.TextSize = MORPH_TITLE_SIZE
+            morphTitle.TextSize = 28
             morphTitle.RichText = true
-            morphTitle.Text = 'hash hub <font color="rgb(120,94,190)">[' .. MORPH_VERSION .. ']</font>'
-            morphTitle.TextColor3 = MORPH_TEXT
+            morphTitle.Text = hashTitle(Configuration.Header, Configuration.Version)
+            morphTitle.TextColor3 = MorphTheme.Text
             morphTitle.TextTransparency = 1
             morphTitle.TextXAlignment = Enum.TextXAlignment.Center
             morphTitle.TextYAlignment = Enum.TextYAlignment.Center
@@ -519,11 +888,12 @@ function bungiesLibrary.Load(SelectedLibrary)
             morphUnderline.AnchorPoint = Vector2.new(0.5, 0.5)
             morphUnderline.Position = UDim2.fromScale(0.5, 0.50)
             morphUnderline.Size = UDim2.fromOffset(0, 1)
-            morphUnderline.BackgroundColor3 = MORPH_PURPLE
+            morphUnderline.BackgroundColor3 = MorphTheme.Purple
             morphUnderline.BackgroundTransparency = 1
             morphUnderline.BorderSizePixel = 0
             morphUnderline.ZIndex = 9011
 
+            local playerName = (Player and (Player.DisplayName ~= "" and Player.DisplayName or Player.Name)) or "player"
             local morphSubtitle = Instance.new("TextLabel")
             morphSubtitle.Name = "Subtitle"
             morphSubtitle.Parent = morphCenter
@@ -532,140 +902,82 @@ function bungiesLibrary.Load(SelectedLibrary)
             morphSubtitle.Size = UDim2.fromOffset(420, 22)
             morphSubtitle.BackgroundTransparency = 1
             morphSubtitle.Font = Enum.Font.Gotham
-            morphSubtitle.TextSize = MORPH_SUBTITLE_SIZE
+            morphSubtitle.TextSize = 13
             morphSubtitle.RichText = true
-            morphSubtitle.Text = 'welcome, <font color="rgb(120,94,190)">' .. playerName .. '</font>, please wait.'
-            morphSubtitle.TextColor3 = MORPH_MUTED
+            morphSubtitle.Text = 'welcome, <font color="rgb(120,94,190)">' .. escapeRich(playerName) .. '</font>, please wait.'
+            morphSubtitle.TextColor3 = MorphTheme.Muted
             morphSubtitle.TextTransparency = 1
             morphSubtitle.TextXAlignment = Enum.TextXAlignment.Center
             morphSubtitle.TextYAlignment = Enum.TextYAlignment.Center
             morphSubtitle.ZIndex = 9011
 
-            local introBindable = Instance.new("BindableEvent")
-            local morphFinished = false
-
             local function playMorphIntro()
                 morphTween(morphOverlay, 0.42, {BackgroundTransparency = 0}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-
-                morphTween(centerDark, 0.58, {
-                    Size = UDim2.fromScale(1.12, 1.15)
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-
-                morphTween(leftWhite, 0.58, {
-                    Position = UDim2.fromScale(-0.075, 0.5)
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-
-                morphTween(leftPurple, 0.58, {
-                    Position = UDim2.fromScale(-0.25, 0.5)
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-
-                morphTween(rightWhite, 0.58, {
-                    Position = UDim2.fromScale(1.075, 0.5)
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-
-                local last = morphTween(rightPurple, 0.58, {
-                    Position = UDim2.fromScale(1.25, 0.5)
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-
+                morphTween(centerDark, 0.58, {Size = UDim2.fromScale(1.12, 1.15)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                morphTween(leftWhite, 0.58, {Position = UDim2.fromScale(-0.075, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                morphTween(leftPurple, 0.58, {Position = UDim2.fromScale(-0.25, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                morphTween(rightWhite, 0.58, {Position = UDim2.fromScale(1.075, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                local last = morphTween(rightPurple, 0.58, {Position = UDim2.fromScale(1.25, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                 last.Completed:Wait()
+
                 morphBars.Visible = false
                 morphOverlay.BackgroundTransparency = 0
-
                 task.wait(0.05)
 
-                morphTween(morphCenter, 0.65, {
-                    Position = UDim2.fromScale(0.5, 0.505)
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-
-                morphTween(morphTitle, 0.48, {
-                    TextTransparency = 0
-                }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-
+                morphTween(morphCenter, 0.65, {Position = UDim2.fromScale(0.5, 0.505)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                morphTween(morphTitle, 0.48, {TextTransparency = 0}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
                 task.wait(0.12)
-
                 morphTween(morphUnderline, 0.42, {
-                    Size = UDim2.fromOffset(MORPH_UNDERLINE_WIDTH, 1),
+                    Size = UDim2.fromOffset(165, 1),
                     BackgroundTransparency = 0.15
                 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                task.wait(0.08)
+                morphTween(morphSubtitle, 0.42, {TextTransparency = 0}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+
+                task.wait(0.90)
+                morphSubtitle.Text = 'loading <font color="rgb(120,94,190)">interface</font>...'
+                task.wait(0.22)
+
+                -- Build the morph card from the loader text block.
+                morphCard.Position = UDim2.fromScale(0.5, 0.505)
+                morphCard.Size = UDim2.fromOffset(420, 120)
+                morphCard.BackgroundTransparency = 0.10
+                morphStroke.Transparency = 0.45
+
+                morphTween(morphSubtitle, 0.22, {TextTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                morphTween(morphTitle, 0.28, {TextTransparency = 0.35}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                morphTween(morphScale, 0.50, {Scale = 1}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                morphTween(morphCenter, 0.50, {Position = UDim2.fromScale(0.5, 0.315)}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                morphTween(morphUnderline, 0.50, {
+                    Size = UDim2.fromOffset(112, 1),
+                    BackgroundTransparency = 0.25
+                }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
 
                 task.wait(0.08)
+                task.spawn(function()
+                    setInterfaceVisible(true)
+                end)
 
-                morphTween(morphSubtitle, 0.42, {
-                    TextTransparency = 0
-                }, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-
-                task.wait(0.75)
-
-                morphSubtitle.Text = 'loading <font color="rgb(120,94,190)">interface</font>...'
-                task.wait(0.20)
-
-                -- morph the loader block into the actual GUI window
-                morphCard.Position = morphCenter.Position
-                morphCard.Size = UDim2.fromOffset(420, 120)
-                morphCard.BackgroundTransparency = 0.08
-                morphCardStroke.Transparency = 0.35
-
-                morphTween(morphSubtitle, 0.20, {TextTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                morphTween(morphTitle, 0.26, {TextTransparency = 0.45}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-
-                morphTween(morphScale, 0.45, {
-                    Scale = 1
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-
-                morphTween(morphCenter, 0.45, {
-                    Position = UDim2.fromScale(0.5, 0.435)
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-
-                morphTween(morphUnderline, 0.45, {
-                    Size = UDim2.fromOffset(500, 1),
-                    BackgroundTransparency = 0.05
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-
-                design.Visible = true
-                design.Position = interfacePosition
-                designScale.Scale = 0.86
-                design.BackgroundTransparency = 1
-
-                task.wait(0.10)
-
-                morphTween(morphCard, 0.72, {
-                    Size = UDim2.new(0, 513, 0, 585),
+                local cardTween = morphTween(morphCard, 0.78, {
+                    Size = interfaceOpenSizes.Design,
                     Position = interfacePosition,
-                    BackgroundTransparency = 0.22
+                    BackgroundTransparency = 0.88
                 }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
 
-                morphTween(designScale, 0.72, {
-                    Scale = 1
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                morphTween(morphStroke, 0.52, {Transparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                cardTween.Completed:Wait()
 
-                morphTween(design, 0.72, {
-                    BackgroundTransparency = 0
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-
-                task.wait(0.40)
-
-                morphTween(morphTitle, 0.28, {TextTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                morphTween(morphUnderline, 0.28, {BackgroundTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-
-                local out = morphTween(morphOverlay, 0.48, {
-                    BackgroundTransparency = 1
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-
+                morphTween(morphTitle, 0.24, {TextTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                morphTween(morphUnderline, 0.24, {BackgroundTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                local out = morphTween(morphOverlay, 0.48, {BackgroundTransparency = 1}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
                 out.Completed:Wait()
 
                 if morphOverlay and morphOverlay.Parent then
                     morphOverlay:Destroy()
                 end
 
-                design.Visible = true
-                design.Position = interfacePosition
-                designScale.Scale = 1
-                design.BackgroundTransparency = 0
-                interfaceVisible = true
-                interfaceAnimating = false
-                introDone = true
-                morphFinished = true
-                introBindable:Fire()
+                introFinished = true
+                introEvent:Fire()
             end
 
             task.spawn(playMorphIntro)
@@ -693,8 +1005,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                 button_tab.Name = "button_tab"
                 button_tab.Parent = container_tab_buttons
-                button_tab.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-                button_tab.BackgroundTransparency = 0.4
+                button_tab.BackgroundColor3 = HashTheme.Background
+                button_tab.BackgroundTransparency = 1
                 button_tab.BorderColor3 = Color3.fromRGB(50, 50, 50)
                 button_tab.Position = UDim2.new(0.0118811885, 0, 0.233333334, 0)
                 button_tab.Size = UDim2.new(0, math.max(15, button_tab.TextBounds.X), 0, 22)
@@ -702,7 +1014,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                 button_tab.Font = Enum.Font.Jura
                 button_tab.LineHeight = 1.150
                 button_tab.Text = Configuration_Page.Subject
-                button_tab.TextColor3 = Color3.fromRGB(180, 180, 180)
+                button_tab.TextColor3 = HashTheme.SubText
                 button_tab.TextSize = 14.000
                 button_tab.TextStrokeColor3 = Color3.fromRGB(16, 16, 16)
                 button_tab.TextStrokeTransparency = 0.300
@@ -720,7 +1032,7 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                 cut_button_tab.Name = "cut_button_tab"
                 cut_button_tab.Parent = button_tab
-                cut_button_tab.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
+                cut_button_tab.BackgroundColor3 = HashTheme.Background
                 cut_button_tab.BorderColor3 = Color3.fromRGB(27, 27, 27)
                 cut_button_tab.Position = UDim2.new(0, 0, 1, 0)
                 cut_button_tab.Size = UDim2.new(0, button_tab.Size.X.Offset - 4, 0, 1)
@@ -798,9 +1110,11 @@ function bungiesLibrary.Load(SelectedLibrary)
                 if isFirstPageAdded then
                     PageIsVisible = true
                     tab.Visible = true
-                    button_tab.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
-                    button_tab.BackgroundTransparency = 0
-                    button_tab.TextColor3 = Color3.fromRGB(222, 222, 222)
+                    tab.Position = UDim2.new(0, 0, 0, 8)
+                    TweenService:Create(tab, TweenInfo.new(0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)}):Play()
+                    button_tab.BackgroundColor3 = HashTheme.Background
+                    button_tab.BackgroundTransparency = 1
+                    button_tab.TextColor3 = HashTheme.Text
                     button_tab.TextTransparency = 0
                     button_tab.TextStrokeTransparency = 0.3
                     button_tab.Size = UDim2.new(0, button_tab.Size.X.Offset, 0, 24)
@@ -818,9 +1132,9 @@ function bungiesLibrary.Load(SelectedLibrary)
                         end
                         for i, v in next, container_tab_buttons:GetChildren() do
                             if v:IsA("TextButton") then
-                                v.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-                                v.BackgroundTransparency = 0.4
-                                v.TextColor3 = Color3.fromRGB(180, 180, 180)
+                                v.BackgroundColor3 = HashTheme.Background
+                                v.BackgroundTransparency = 1
+                                v.TextColor3 = HashTheme.SubText
                                 v.TextTransparency = 0.4
                                 v.TextStrokeTransparency = 0.4
                                 v.Size = UDim2.new(0, v.Size.X.Offset, 0, 22)
@@ -832,9 +1146,11 @@ function bungiesLibrary.Load(SelectedLibrary)
                             end
                         end
                         tab.Visible = true
-                        button_tab.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
-                        button_tab.BackgroundTransparency = 0
-                        button_tab.TextColor3 = Color3.fromRGB(222, 222, 222)
+                        tab.Position = UDim2.new(0, 0, 0, 8)
+                        TweenService:Create(tab, TweenInfo.new(0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)}):Play()
+                        button_tab.BackgroundColor3 = HashTheme.Background
+                        button_tab.BackgroundTransparency = 1
+                        button_tab.TextColor3 = HashTheme.Text
                         button_tab.TextTransparency = 0
                         button_tab.TextStrokeTransparency = 0.3
                         button_tab.Size = UDim2.new(0, button_tab.Size.X.Offset, 0, 24)
@@ -964,8 +1280,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         gradient_design_button.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                         }
                         gradient_design_button.Rotation = 90
                         gradient_design_button.Name = "gradient_design_button"
@@ -992,8 +1308,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         gradient_design_button_2.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(42, 42, 49)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(37, 37, 44))
                         }
                         gradient_design_button_2.Rotation = 90
                         gradient_design_button_2.Name = "gradient_design_button"
@@ -1015,8 +1331,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button_2.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                                 }
                             end
                         )
@@ -1025,8 +1341,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(24, 24, 24)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(32, 32, 38)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                                 }
                             end
                         )
@@ -1034,14 +1350,14 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(47, 47, 47)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(42, 42, 42))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(59, 59, 69)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(51, 51, 60))
                                 }
                                 wait(.2)
                                 gradient_design_button.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(31, 31, 31)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(39, 39, 46)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(37, 37, 44))
                                 }
                             end
                         )
@@ -1116,8 +1432,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         gradient_design_button_toggle.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                         }
                         gradient_design_button_toggle.Rotation = 90
                         gradient_design_button_toggle.Name = "gradient_design_button_toggle"
@@ -1139,8 +1455,8 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         gradient_design_button_toggle_2.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                         }
                         gradient_design_button_toggle_2.Rotation = 90
                         gradient_design_button_toggle_2.Name = "gradient_design_button_toggle_2"
@@ -1164,8 +1480,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                                         ColorSequenceKeypoint.new(1.00, Color3.fromRGB(70, 53, 115))
                                     } or
                                     ColorSequence.new {
-                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                                     }
                                 gradient_design_button_toggle_2.Color = ToggleGradient
 
@@ -1188,8 +1504,8 @@ function bungiesLibrary.Load(SelectedLibrary)
                             function()
                                 gradient_design_button_toggle.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                                 }
                             end
                         )
@@ -1246,7 +1562,7 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         design_dropdown.Name = "design_dropdown"
                         design_dropdown.Parent = holder_dropdown
-                        design_dropdown.BackgroundColor3 = Color3.fromRGB(25, 25, 29)
+                        design_dropdown.BackgroundColor3 = Color3.fromRGB(36, 36, 42)
                         design_dropdown.BorderSizePixel = 0
                         design_dropdown.ClipsDescendants = true
                         design_dropdown.Position = UDim2.new(0, 0, 0, 19)
@@ -1257,7 +1573,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                         dropdown_corner.Parent = design_dropdown
 
                         dropdown_stroke.Parent = design_dropdown
-                        dropdown_stroke.Color = Color3.fromRGB(62, 62, 70)
+                        dropdown_stroke.Color = Color3.fromRGB(82, 82, 94)
                         dropdown_stroke.Thickness = 1
                         dropdown_stroke.Transparency = 0.15
 
@@ -1295,7 +1611,7 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                         dropdown_container.Name = "dropdown_container"
                         dropdown_container.Parent = design_dropdown
-                        dropdown_container.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+                        dropdown_container.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
                         dropdown_container.BorderSizePixel = 0
                         dropdown_container.Position = UDim2.new(0, 5, 0, 31)
                         dropdown_container.Size = UDim2.new(1, -10, 0, 0)
@@ -1365,7 +1681,7 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                             option_button.Name = "button_dropdown_option"
                             option_button.Parent = dropdown_container
-                            option_button.BackgroundColor3 = Color3.fromRGB(26, 26, 31)
+                            option_button.BackgroundColor3 = Color3.fromRGB(38, 38, 45)
                             option_button.BorderSizePixel = 0
                             option_button.Size = UDim2.new(1, -8, 0, 24)
                             option_button.Position = UDim2.new(0, 4, 0, 0)
@@ -1400,12 +1716,12 @@ function bungiesLibrary.Load(SelectedLibrary)
 
                             option_button.MouseEnter:Connect(function()
                                 if selectedValue ~= option then
-                                    option_button.BackgroundColor3 = Color3.fromRGB(34, 34, 40)
+                                    option_button.BackgroundColor3 = Color3.fromRGB(48, 48, 56)
                                 end
                             end)
                             option_button.MouseLeave:Connect(function()
                                 if selectedValue ~= option then
-                                    option_button.BackgroundColor3 = Color3.fromRGB(26, 26, 31)
+                                    option_button.BackgroundColor3 = Color3.fromRGB(38, 38, 45)
                                 end
                             end)
                             option_button.MouseButton1Click:Connect(function()
@@ -1434,7 +1750,7 @@ function bungiesLibrary.Load(SelectedLibrary)
                             dropdown_stroke.Color = Color3.fromRGB(125, 88, 220)
                         end)
                         button_dropdown.MouseLeave:Connect(function()
-                            dropdown_stroke.Color = Color3.fromRGB(62, 62, 70)
+                            dropdown_stroke.Color = Color3.fromRGB(82, 82, 94)
                         end)
 
                         for _, option in next, Configuration_Dropdown.Options do
@@ -1553,8 +1869,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_slider.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(42, 42, 49)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(37, 37, 44))
                         }
                         gradient_design_slider.Rotation = 90
                         gradient_design_slider.Name = "gradient_design_slider"
@@ -1574,8 +1890,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_button_slider.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                         }
                         gradient_button_slider.Rotation = 90
                         gradient_button_slider.Name = "gradient_button_slider"
@@ -1637,8 +1953,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_invisible_slider_cut.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                         }
                         gradient_invisible_slider_cut.Rotation = 90
                         gradient_invisible_slider_cut.Name = "gradient_invisible_slider_cut"
@@ -1667,8 +1983,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             function()
                                 gradient_design_slider.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(42, 42, 49)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(37, 37, 44))
                                 }
                             end
                         )
@@ -1880,7 +2196,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         design_textbox.Name = "design_textbox"
                         design_textbox.Parent = holder_textbox
-                        design_textbox.BackgroundColor3 = Color3.fromRGB(25, 25, 29)
+                        design_textbox.BackgroundColor3 = Color3.fromRGB(36, 36, 42)
                         design_textbox.BorderSizePixel = 0
                         design_textbox.Position = UDim2.new(0, 0, 0, 19)
                         design_textbox.Size = UDim2.new(0, 221, 0, 27)
@@ -1889,7 +2205,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         textbox_corner.Parent = design_textbox
 
                         textbox_stroke.Parent = design_textbox
-                        textbox_stroke.Color = Color3.fromRGB(62, 62, 70)
+                        textbox_stroke.Color = Color3.fromRGB(82, 82, 94)
                         textbox_stroke.Thickness = 1
                         textbox_stroke.Transparency = 0.15
 
@@ -1931,7 +2247,7 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             textbox_stroke.Color = Color3.fromRGB(125, 88, 220)
                         end)
                         box.FocusLost:Connect(function(enterPressed)
-                            textbox_stroke.Color = Color3.fromRGB(62, 62, 70)
+                            textbox_stroke.Color = Color3.fromRGB(82, 82, 94)
                             if enterPressed then
                                 submit()
                             end
@@ -2017,8 +2333,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_keybind_2.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                         }
                         gradient_design_keybind_2.Rotation = 90
                         gradient_design_keybind_2.Name = "gradient_design_keybind_2"
@@ -2039,8 +2355,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_textbox_3.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                         }
                         gradient_design_textbox_3.Rotation = 90
                         gradient_design_textbox_3.Name = "gradient_design_textbox_3"
@@ -2122,8 +2438,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             function()
                                 gradient_design_keybind_2.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                                 }
                             end
                         )
@@ -2199,8 +2515,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_button_toggle.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                         }
                         gradient_design_button_toggle.Rotation = 90
                         gradient_design_button_toggle.Name = "gradient_design_button_toggle"
@@ -2228,8 +2544,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
 
                         gradient_design_button_toggle_2.Color =
                             ColorSequence.new {
-                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                         }
                         gradient_design_button_toggle_2.Rotation = 90
                         gradient_design_button_toggle_2.Name = "gradient_design_button_toggle_2"
@@ -2253,8 +2569,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                                         ColorSequenceKeypoint.new(1.00, Color3.fromRGB(70, 53, 115))
                                     } or
                                     ColorSequence.new {
-                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
-                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(36, 36, 42)),
+                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(40, 40, 47))
                                     }
                                 gradient_design_button_toggle_2.Color = ToggleGradient
 
@@ -2279,8 +2595,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                             function()
                                 gradient_design_button_toggle.Color =
                                     ColorSequence.new {
-                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
-                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(49, 49, 57)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(43, 43, 51))
                                 }
                             end
                         )
@@ -2294,13 +2610,13 @@ function SectionTools:CreateSlider(Configuration_Slider)
                         end
                         function DestroyLocalCheck()
                             button_toggle:Destroy()
-                            UpdateSection()
-                            UpdateSize()
+                            updateSection()
+                            updateSize()
                         end
                         function CheckTools.Destroy()
                             button_toggle:Destroy()
-                            UpdateSection()
-                            UpdateSize()
+                            updateSection()
+                            updateSize()
                         end                        
                         return CheckTools
                     end
@@ -2396,7 +2712,8 @@ function SectionTools:CreateSlider(Configuration_Slider)
                 return PageTools
             end
             function InterfaceTools.SetHeader(new)
-                header_label.Text = new
+                Configuration.Header = tostring(new)
+                header_label.Text = hashTitle(Configuration.Header, Configuration.Version)
             end
             function InterfaceTools.SetFooter(new)
                 footer_label.Text = new
@@ -2417,16 +2734,13 @@ function SectionTools:CreateSlider(Configuration_Slider)
                 setInterfaceVisible(not interfaceVisible)
             end
             function InterfaceTools.WaitForIntro()
-                if morphFinished then
-                    return
+                if not introFinished then
+                    introEvent.Event:Wait()
                 end
-                introBindable.Event:Wait()
             end
             function InterfaceTools.Destroy()
                 if private and private.Parent then
                     private:Destroy()
-                elseif design and design.Parent then
-                    design:Destroy()
                 end
             end
             return InterfaceTools
@@ -2451,6 +2765,87 @@ function SectionTools:CreateSlider(Configuration_Slider)
         padding_notifications.Parent = notifications
         padding_notifications.PaddingLeft = UDim.new(0, 25)
         padding_notifications.PaddingTop = UDim.new(0, 60)
+
+        local NotificationTheme = {
+            Background = Color3.fromRGB(24, 24, 24),
+            Background2 = Color3.fromRGB(20, 20, 20),
+            Stroke = Color3.fromRGB(72, 72, 84),
+            Text = Color3.fromRGB(205, 205, 205),
+            SubText = Color3.fromRGB(170, 170, 178),
+            Accent = Color3.fromRGB(125, 95, 210)
+        }
+
+        local function notifCorner(object, radius)
+            if not object or not object:IsA("GuiObject") then return end
+            local corner = object:FindFirstChild("hashhub_notif_corner")
+            if not corner then
+                corner = Instance.new("UICorner")
+                corner.Name = "hashhub_notif_corner"
+                corner.Parent = object
+            end
+            corner.CornerRadius = UDim.new(0, radius or 5)
+        end
+
+        local function notifStroke(object)
+            if not object or not object:IsA("GuiObject") then return end
+            local stroke = object:FindFirstChild("hashhub_notif_stroke")
+            if not stroke then
+                stroke = Instance.new("UIStroke")
+                stroke.Name = "hashhub_notif_stroke"
+                stroke.Parent = object
+            end
+            stroke.Color = NotificationTheme.Stroke
+            stroke.Transparency = 0.35
+            stroke.Thickness = 1
+        end
+
+        local function styleNotificationObject(object)
+            if not object then return end
+            pcall(function()
+                local name = object.Name
+                if object:IsA("Frame") then
+                    object.BorderSizePixel = 0
+                end
+                if object:IsA("TextLabel") then
+                    object.Font = Enum.Font.Gotham
+                    object.TextStrokeTransparency = 1
+                    object.BackgroundTransparency = 1
+                end
+                if object:IsA("UIGradient") then
+                    object.Color = ColorSequence.new({
+                        ColorSequenceKeypoint.new(0.00, NotificationTheme.Accent),
+                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(70, 55, 130))
+                    })
+                    object.Rotation = 90
+                end
+                if name == "design" then
+                    object.BackgroundColor3 = NotificationTheme.Background
+                    notifCorner(object, 6)
+                    notifStroke(object)
+                elseif name == "design_1" then
+                    object.BackgroundColor3 = NotificationTheme.Background
+                    object.BorderSizePixel = 0
+                    notifCorner(object, 5)
+                elseif name == "haeder_notification" then
+                    object.TextColor3 = NotificationTheme.Text
+                    object.TextSize = 14
+                    object.TextXAlignment = Enum.TextXAlignment.Center
+                elseif name == "note_notification" then
+                    object.TextColor3 = NotificationTheme.SubText
+                    object.TextSize = 13
+                    object.TextXAlignment = Enum.TextXAlignment.Center
+                elseif name == "design_2_cutoff" then
+                    object.BackgroundColor3 = NotificationTheme.Accent
+                    object.BackgroundTransparency = 0.2
+                end
+            end)
+        end
+
+        notifications.DescendantAdded:Connect(function(object)
+            task.defer(function()
+                styleNotificationObject(object)
+            end)
+        end)
 
         local NotificationLibrary = {}
         function NotificationLibrary:Send(Configuration)
@@ -2555,8 +2950,36 @@ function SectionTools:CreateSlider(Configuration_Slider)
             design_1.Size = UDim2.new(0, 326, 0, newNotificationSize.Y + 34)
             note_notification.Size = UDim2.new(0, 326, 0, newNotificationSize.Y)
             
+            styleNotificationObject(design)
+            for _, object in next, design:GetDescendants() do
+                styleNotificationObject(object)
+            end
+
+            local notifScale = Instance.new("UIScale")
+            notifScale.Name = "hashhub_notif_scale"
+            notifScale.Parent = design
+            notifScale.Scale = 0.96
+
+            design.BackgroundTransparency = 1
+            design_1.BackgroundTransparency = 1
+            haeder_notification.TextTransparency = 1
+            note_notification.TextTransparency = 1
+
+            TweenService:Create(notifScale, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Scale = 1}):Play()
+            TweenService:Create(design, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+            TweenService:Create(design_1, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+            TweenService:Create(haeder_notification, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+            TweenService:Create(note_notification, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+
             function des()
                 wait(Configuration.Time)
+                pcall(function()
+                    TweenService:Create(design, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
+                    TweenService:Create(design_1, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
+                    TweenService:Create(haeder_notification, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
+                    TweenService:Create(note_notification, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
+                end)
+                wait(0.2)
                 design:Destroy()
             end
             coroutine.wrap(des)(design, Configuration.Time)
@@ -2564,5 +2987,5 @@ function SectionTools:CreateSlider(Configuration_Slider)
         return NotificationLibrary
     end
 end
-bungiesLibrary.__version = "hashui_morph_loader_integrated_v1"
+bungiesLibrary.__version = "hashui_full_v12_bigger_buttons_smooth_toggle"
 return bungiesLibrary
