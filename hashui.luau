@@ -1,1831 +1,2718 @@
---[[
+--  //    stop looking here
+--  //    made by bungie#4857
+--  //    reworked skin: loading-screen style, no built-in loading overlay
 
-    Hash Hub UI - loading-screen style rewrite
-    Reworked to match the dark centered Hash Hub loading screen:
-    - Smooth loading intro
-    - Smooth RightAlt open/close
-    - Fixed dropdown sizing / z-order
-    - Working Destroy()
-    - Same main API as the old bungiesLibrary UI
 
-    Usage:
-        local Library = loadstring(game:HttpGet("..."))()
-        local UI = Library.Load("ui")
-        local Notif = Library.Load("notif")
+--/ Locals
+local Player = game:GetService("Players").LocalPlayer
+local Mouse = Player:GetMouse()
 
-        local Window = UI:Start({
-            Header = "Hash Hub",
-            Version = "2.6.3",
-            Footer = "Hash Hub | Loaded",
-            VisibleKeybind = Enum.KeyCode.RightAlt
-        })
-
-]]
-
-local Players = game:GetService("Players")
+--/ Services
 local UserInputService = game:GetService("UserInputService")
 local TextService = game:GetService("TextService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local InputService = game:GetService("UserInputService")
 local CoreGuiService = game:GetService("CoreGui")
+local ContentService = game:GetService("ContentProvider")
 
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
 
-local HashHubLibrary = {}
-getgenv().ui = false
-
---// theme
-local THEME = {
-    Background = Color3.fromRGB(24, 24, 24),
-    Background2 = Color3.fromRGB(20, 20, 20),
-    Background3 = Color3.fromRGB(16, 16, 16),
-    Card = Color3.fromRGB(19, 19, 19),
-    Card2 = Color3.fromRGB(22, 22, 22),
-    Stroke = Color3.fromRGB(42, 42, 42),
-    StrokeSoft = Color3.fromRGB(33, 33, 33),
-    Text = Color3.fromRGB(205, 205, 205),
-    TextBright = Color3.fromRGB(232, 232, 232),
-    Muted = Color3.fromRGB(160, 160, 160),
-    Muted2 = Color3.fromRGB(115, 115, 115),
+--// Hash Hub loading-screen style skin
+--// This is NOT a loading screen. It only skins the UI to match the dark centered loader aesthetic.
+local HH_THEME = {
+    Dark = Color3.fromRGB(24, 24, 24),
+    Dark2 = Color3.fromRGB(28, 28, 28),
+    Dark3 = Color3.fromRGB(18, 18, 18),
+    Line = Color3.fromRGB(55, 55, 55),
     Purple = Color3.fromRGB(125, 95, 210),
-    Purple2 = Color3.fromRGB(95, 71, 170),
-    PurpleDark = Color3.fromRGB(58, 43, 105),
-    Red = Color3.fromRGB(220, 85, 85)
+    PurpleDark = Color3.fromRGB(85, 65, 145),
+    Text = Color3.fromRGB(205, 205, 205),
+    Muted = Color3.fromRGB(165, 165, 165)
 }
 
-local EASE_FAST = TweenInfo.new(0.16, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-local EASE_MED = TweenInfo.new(0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-local EASE_SLOW = TweenInfo.new(0.48, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+local function HH_Tween(object, time, props, style, direction)
+    local tween = TweenService:Create(
+        object,
+        TweenInfo.new(time or 0.2, style or Enum.EasingStyle.Quint, direction or Enum.EasingDirection.Out),
+        props
+    )
+    tween:Play()
+    return tween
+end
 
-local function protectGui(gui)
-    local parent = nil
+local function HH_Gradient(a, b)
+    return ColorSequence.new {
+        ColorSequenceKeypoint.new(0, a),
+        ColorSequenceKeypoint.new(1, b)
+    }
+end
 
-    if type(gethui) == "function" then
-        pcall(function()
-            parent = gethui()
+local function HH_SkinInstance(obj)
+    local n = string.lower(obj.Name or "")
+
+    if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+        pcall(function() obj.Font = Enum.Font.Gotham end)
+        pcall(function() obj.TextColor3 = HH_THEME.Text end)
+        pcall(function() obj.TextStrokeTransparency = 1 end)
+        pcall(function() obj.BorderSizePixel = 0 end)
+        pcall(function() obj.AutoButtonColor = false end)
+    end
+
+    if obj:IsA("Frame") or obj:IsA("ScrollingFrame") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+        pcall(function() obj.BorderSizePixel = 0 end)
+        pcall(function() obj.BorderColor3 = HH_THEME.Line end)
+    end
+
+    if obj:IsA("Frame") then
+        if n:find("section_design") or n:find("design_2_slider") or n:find("cut_header") or n:find("cutoff") then
+            obj.BackgroundColor3 = HH_THEME.Purple
+        elseif n:find("cut") or n:find("divider") then
+            obj.BackgroundColor3 = HH_THEME.Line
+        elseif obj.BackgroundTransparency < 1 then
+            obj.BackgroundColor3 = HH_THEME.Dark2
+        end
+    end
+
+    if obj:IsA("ScrollingFrame") then
+        obj.BackgroundTransparency = 1
+        obj.ScrollBarThickness = 0
+    end
+
+    if obj:IsA("UIGradient") then
+        local parentName = obj.Parent and string.lower(obj.Parent.Name or "") or ""
+        if parentName:find("design_2_slider") or parentName:find("cutoff") or parentName:find("section_design") then
+            obj.Color = HH_Gradient(HH_THEME.Purple, HH_THEME.PurpleDark)
+        else
+            obj.Color = HH_Gradient(Color3.fromRGB(30, 30, 30), Color3.fromRGB(24, 24, 24))
+        end
+    end
+end
+
+local function HH_AutoSkin(root)
+    for _, obj in next, root:GetDescendants() do
+        HH_SkinInstance(obj)
+    end
+    root.DescendantAdded:Connect(function(obj)
+        task.defer(function()
+            HH_SkinInstance(obj)
         end)
-    end
-
-    if not parent then
-        parent = CoreGuiService
-    end
-
-    pcall(function()
-        if syn and syn.protect_gui then
-            syn.protect_gui(gui)
-        end
-    end)
-
-    gui.Parent = parent
-end
-
-local function create(className, props, children)
-    local obj = Instance.new(className)
-
-    if props then
-        for prop, value in pairs(props) do
-            obj[prop] = value
-        end
-    end
-
-    if children then
-        for _, child in ipairs(children) do
-            child.Parent = obj
-        end
-    end
-
-    return obj
-end
-
-local function tween(obj, info, props)
-    local tw = TweenService:Create(obj, info or EASE_FAST, props)
-    tw:Play()
-    return tw
-end
-
-local function corner(obj, radius)
-    return create("UICorner", {
-        CornerRadius = UDim.new(0, radius or 6),
-        Parent = obj
-    })
-end
-
-local function stroke(obj, color, transparency, thickness)
-    return create("UIStroke", {
-        Color = color or THEME.Stroke,
-        Transparency = transparency or 0,
-        Thickness = thickness or 1,
-        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-        Parent = obj
-    })
-end
-
-local function padding(obj, left, right, top, bottom)
-    return create("UIPadding", {
-        PaddingLeft = UDim.new(0, left or 0),
-        PaddingRight = UDim.new(0, right or 0),
-        PaddingTop = UDim.new(0, top or 0),
-        PaddingBottom = UDim.new(0, bottom or 0),
-        Parent = obj
-    })
-end
-
-local function listLayout(obj, direction, pad)
-    return create("UIListLayout", {
-        FillDirection = direction or Enum.FillDirection.Vertical,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, pad or 0),
-        Parent = obj
-    })
-end
-
-local function htmlEscape(str)
-    str = tostring(str or "")
-    str = str:gsub("&", "&amp;")
-    str = str:gsub("<", "&lt;")
-    str = str:gsub(">", "&gt;")
-    return str
-end
-
-local function genKey()
-    local chars = {}
-    for i = string.byte("A"), string.byte("Z") do
-        table.insert(chars, string.char(i))
-    end
-    for i = string.byte("0"), string.byte("9") do
-        table.insert(chars, string.char(i))
-    end
-
-    local function part()
-        local t = {}
-        for i = 1, 5 do
-            t[i] = chars[math.random(1, #chars)]
-        end
-        return table.concat(t)
-    end
-
-    return "hashhub_[" .. part() .. "-" .. part() .. "-" .. part() .. "-" .. part() .. "]"
-end
-
-local function makeText(parent, props)
-    props = props or {}
-
-    local label = create("TextLabel", {
-        Parent = parent,
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        Font = props.Font or Enum.Font.Gotham,
-        Text = props.Text or "",
-        TextColor3 = props.Color or THEME.Text,
-        TextSize = props.Size or 13,
-        TextTransparency = props.TextTransparency or 0,
-        RichText = props.RichText or false,
-        TextXAlignment = props.X or Enum.TextXAlignment.Left,
-        TextYAlignment = props.Y or Enum.TextYAlignment.Center,
-        TextTruncate = Enum.TextTruncate.AtEnd,
-        Size = props.GuiSize or UDim2.new(1, 0, 1, 0),
-        Position = props.Position or UDim2.new(),
-        ZIndex = props.ZIndex or 1
-    })
-
-    return label
-end
-
-local function setGradient(obj, c1, c2, rot)
-    local grad = obj:FindFirstChildOfClass("UIGradient")
-    if not grad then
-        grad = create("UIGradient", {Parent = obj})
-    end
-
-    grad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, c1),
-        ColorSequenceKeypoint.new(1, c2 or c1)
-    })
-    grad.Rotation = rot or 90
-    return grad
-end
-
-local function makeButtonVisual(parent, height)
-    local holder = create("Frame", {
-        Parent = parent,
-        BackgroundColor3 = THEME.Card2,
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, height or 30),
-        ClipsDescendants = true
-    })
-
-    corner(holder, 6)
-    stroke(holder, THEME.StrokeSoft, 0.15, 1)
-    setGradient(holder, Color3.fromRGB(25, 25, 25), Color3.fromRGB(20, 20, 20))
-
-    return holder
-end
-
-local function connectHover(frame, normalStroke, hoverStroke, normalBg, hoverBg)
-    local s = frame:FindFirstChildOfClass("UIStroke")
-
-    frame.MouseEnter:Connect(function()
-        if s then
-            tween(s, EASE_FAST, {Color = hoverStroke or THEME.Purple, Transparency = 0})
-        end
-        if hoverBg then
-            tween(frame, EASE_FAST, {BackgroundColor3 = hoverBg})
-        end
-    end)
-
-    frame.MouseLeave:Connect(function()
-        if s then
-            tween(s, EASE_FAST, {Color = normalStroke or THEME.StrokeSoft, Transparency = 0.15})
-        end
-        if normalBg then
-            tween(frame, EASE_FAST, {BackgroundColor3 = normalBg})
-        end
     end)
 end
 
-local function makeDrag(handle, target, latency)
-    local dragging = false
-    local dragInput
-    local startMouse
-    local startPos
+-- / Main Library
+local bungiesLibrary = {}
+getgenv().ui = false
+function bungiesLibrary.Load(SelectedLibrary)
+    if string.find(string.lower(SelectedLibrary), "ui") then
+        ui = true
 
-    handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            startMouse = input.Position
-            startPos = target.Position
+        -- Tweening
+        local TweenAmount = 1
+        local TweenTable = {
+            Default = {
+                TweenInfo.new(0.17, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, 0, false, 0)
+            }
+        }
+        local CreateTween = function(Name, Information)
+            TweenAmount = TweenAmount + 1
+            Name = Name or "Tween-" .. tostring(TweenAmount)
 
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
+            Information = {
+                Speed = Information.Speed or 0.17,
+                Style = Information.Style or Enum.EasingStyle.Sine,
+                Direction = Information.Direction or Enum.EasingDirection.InOut,
+                LoopAmount = Information.LoopAmount or 0,
+                Reverse = Information.Reverse or false,
+                Delay = Information.Delay or 0
+            }
+
+            TweenTable[Name] =
+                TweenInfo.new(
+                Information.Speed,
+                Information.Style,
+                Information.Direction,
+                Information.LoopAmount,
+                Information.Reverse,
+                Information.Delay
+            )
+        end
+
+        -- Dragging
+        local Drag = function(Information)
+            Information = {
+                Object = Information.Object,
+                Latency = Information.Latency or 0.06
+            }
+
+            toggled = nil
+            input = nil
+            start = nil
+
+            function updateInput(input)
+                local Delta = input.Position - start
+                local Position =
+                    UDim2.new(
+                    startPos.X.Scale,
+                    startPos.X.Offset + Delta.X,
+                    startPos.Y.Scale,
+                    startPos.Y.Offset + Delta.Y
+                )
+                game:GetService("TweenService"):Create(
+                    Information.Object,
+                    TweenInfo.new(Information.Latency),
+                    {Position = Position}
+                ):Play()
+            end
+
+            Information.Object.InputBegan:Connect(
+                function(inp)
+                    if (inp.UserInputType == Enum.UserInputType.MouseButton1) then
+                        toggled = true
+                        start = inp.Position
+                        startPos = Information.Object.Position
+                        inp.Changed:Connect(
+                            function()
+                                if inp.UserInputState == Enum.UserInputState.End then
+                                    toggled = false
+                                end
+                            end
+                        )
+                    end
                 end
-            end)
-        end
-    end)
-
-    handle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging and startMouse and startPos then
-            local delta = input.Position - startMouse
-            local newPos = UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale,
-                startPos.Y.Offset + delta.Y
             )
 
-            tween(target, TweenInfo.new(latency or 0.055, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                Position = newPos
-            })
-        end
-    end)
-end
-
-local function showLoadingScreen(config)
-    config = config or {}
-
-    if config.Loading == false then
-        return
-    end
-
-    local version = tostring(config.Version or "2.6.3")
-    local titleText = string.lower(config.Header or "hash hub")
-    local duration = tonumber(config.LoadingTime or 1.45) or 1.45
-    local display = htmlEscape(LocalPlayer.DisplayName or LocalPlayer.Name)
-
-    local gui = create("ScreenGui", {
-        Name = "HashHub_Loading",
-        IgnoreGuiInset = true,
-        ResetOnSpawn = false,
-        ZIndexBehavior = Enum.ZIndexBehavior.Global
-    })
-
-    protectGui(gui)
-
-    local bg = create("Frame", {
-        Parent = gui,
-        Size = UDim2.fromScale(1, 1),
-        BackgroundColor3 = THEME.Background,
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0
-    })
-
-    local holder = create("Frame", {
-        Parent = bg,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.fromScale(0.5, 0.525),
-        Size = UDim2.fromOffset(560, 150),
-        BackgroundTransparency = 1
-    })
-
-    local title = makeText(holder, {
-        GuiSize = UDim2.fromOffset(560, 42),
-        Position = UDim2.fromScale(0, 0.18),
-        Text = htmlEscape(titleText) .. ' <font color="rgb(125,95,210)">[' .. htmlEscape(version) .. ']</font>',
-        RichText = true,
-        Font = Enum.Font.Gotham,
-        Size = 30,
-        Color = THEME.Text,
-        TextTransparency = 1,
-        X = Enum.TextXAlignment.Center
-    })
-
-    local line = create("Frame", {
-        Parent = holder,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.fromScale(0.5, 0.52),
-        Size = UDim2.fromOffset(112, 1),
-        BackgroundColor3 = Color3.fromRGB(55, 55, 55),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0
-    })
-
-    local purpleLine = create("Frame", {
-        Parent = holder,
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.fromScale(0.5, 0.52),
-        Size = UDim2.fromOffset(0, 1),
-        BackgroundColor3 = THEME.Purple,
-        BackgroundTransparency = 0.35,
-        BorderSizePixel = 0
-    })
-
-    local sub = makeText(holder, {
-        GuiSize = UDim2.fromOffset(560, 28),
-        Position = UDim2.fromScale(0, 0.59),
-        Text = 'welcome, <font color="rgb(125,95,210)">' .. display .. '</font>, please wait.',
-        RichText = true,
-        Font = Enum.Font.Gotham,
-        Size = 14,
-        Color = THEME.Muted,
-        TextTransparency = 1,
-        X = Enum.TextXAlignment.Center
-    })
-
-    tween(bg, EASE_SLOW, {BackgroundTransparency = 0})
-    task.wait(0.08)
-    tween(holder, EASE_SLOW, {Position = UDim2.fromScale(0.5, 0.505)})
-    tween(title, EASE_MED, {TextTransparency = 0})
-    task.wait(0.12)
-    tween(line, EASE_FAST, {BackgroundTransparency = 0.1})
-    tween(purpleLine, EASE_SLOW, {Size = UDim2.fromOffset(112, 1)})
-    task.wait(0.08)
-    tween(sub, EASE_MED, {TextTransparency = 0})
-
-    local alive = true
-    task.spawn(function()
-        while alive and gui.Parent do
-            tween(purpleLine, TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-                BackgroundTransparency = 0.08
-            })
-            task.wait(0.9)
-            tween(purpleLine, TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-                BackgroundTransparency = 0.55
-            })
-            task.wait(0.9)
-        end
-    end)
-
-    task.wait(duration)
-
-    alive = false
-    tween(holder, EASE_MED, {Position = UDim2.fromScale(0.5, 0.49)})
-    tween(title, EASE_FAST, {TextTransparency = 1})
-    tween(sub, EASE_FAST, {TextTransparency = 1})
-    tween(line, EASE_FAST, {BackgroundTransparency = 1})
-    tween(purpleLine, EASE_FAST, {
-        BackgroundTransparency = 1,
-        Size = UDim2.fromOffset(0, 1)
-    })
-
-    task.wait(0.22)
-    local out = tween(bg, EASE_MED, {BackgroundTransparency = 1})
-    out.Completed:Wait()
-    gui:Destroy()
-end
-
-function HashHubLibrary.Load(selectedLibrary)
-    selectedLibrary = string.lower(tostring(selectedLibrary or ""))
-
-    if string.find(selectedLibrary, "ui") then
-        getgenv().ui = true
-
-        local Interface = {}
-
-        function Interface:Start(Configuration)
-            Configuration = Configuration or {}
-
-            local header = Configuration.Header or "Hash Hub"
-            local version = tostring(Configuration.Version or "2.6.3")
-            local footerDefault = "welcome, " .. (LocalPlayer.DisplayName or LocalPlayer.Name) .. ", please wait."
-            local footer = Configuration.Footer or footerDefault
-            local visKey = Configuration.VisibleKeybind or Enum.KeyCode.RightAlt
-
-            showLoadingScreen(Configuration)
-
-            local screen = create("ScreenGui", {
-                Name = genKey(),
-                IgnoreGuiInset = true,
-                ResetOnSpawn = false,
-                ZIndexBehavior = Enum.ZIndexBehavior.Global,
-                Enabled = true
-            })
-
-            protectGui(screen)
-
-            local dim = create("Frame", {
-                Parent = screen,
-                Size = UDim2.fromScale(1, 1),
-                BackgroundColor3 = THEME.Background,
-                BackgroundTransparency = 1,
-                BorderSizePixel = 0
-            })
-
-            local window = create("CanvasGroup", {
-                Parent = dim,
-                AnchorPoint = Vector2.new(0.5, 0.5),
-                Position = UDim2.fromScale(0.5, 0.525),
-                Size = UDim2.fromOffset(590, 470),
-                BackgroundColor3 = THEME.Card,
-                BorderSizePixel = 0,
-                ClipsDescendants = true,
-                GroupTransparency = 1
-            })
-
-            corner(window, 12)
-            stroke(window, THEME.StrokeSoft, 0.03, 1)
-            setGradient(window, Color3.fromRGB(22, 22, 22), Color3.fromRGB(15, 15, 15), 90)
-
-            local winScale = create("UIScale", {
-                Parent = window,
-                Scale = 0.965
-            })
-
-            local headerFrame = create("Frame", {
-                Parent = window,
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 102)
-            })
-
-            local title = makeText(headerFrame, {
-                GuiSize = UDim2.new(1, -40, 0, 42),
-                Position = UDim2.new(0, 20, 0, 16),
-                Text = htmlEscape(string.lower(header)) .. ' <font color="rgb(125,95,210)">[' .. htmlEscape(version) .. ']</font>',
-                RichText = true,
-                Font = Enum.Font.Gotham,
-                Size = 25,
-                Color = THEME.Text,
-                X = Enum.TextXAlignment.Center
-            })
-
-            local tinyFooter = makeText(headerFrame, {
-                GuiSize = UDim2.new(1, -40, 0, 22),
-                Position = UDim2.new(0, 20, 0, 58),
-                Text = htmlEscape(footer),
-                RichText = true,
-                Font = Enum.Font.Gotham,
-                Size = 13,
-                Color = THEME.Muted,
-                X = Enum.TextXAlignment.Center
-            })
-
-            local divider = create("Frame", {
-                Parent = headerFrame,
-                AnchorPoint = Vector2.new(0.5, 0),
-                Position = UDim2.new(0.5, 0, 0, 85),
-                Size = UDim2.fromOffset(112, 1),
-                BackgroundColor3 = Color3.fromRGB(55, 55, 55),
-                BorderSizePixel = 0
-            })
-
-            local activeDivider = create("Frame", {
-                Parent = headerFrame,
-                AnchorPoint = Vector2.new(0.5, 0),
-                Position = UDim2.new(0.5, 0, 0, 85),
-                Size = UDim2.fromOffset(112, 1),
-                BackgroundColor3 = THEME.Purple,
-                BackgroundTransparency = 0.4,
-                BorderSizePixel = 0
-            })
-
-            local tabBar = create("Frame", {
-                Parent = window,
-                BackgroundTransparency = 1,
-                Position = UDim2.new(0, 18, 0, 103),
-                Size = UDim2.new(1, -36, 0, 36),
-                ClipsDescendants = true
-            })
-
-            local tabList = listLayout(tabBar, Enum.FillDirection.Horizontal, 8)
-            tabList.VerticalAlignment = Enum.VerticalAlignment.Center
-            tabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-
-            local body = create("Frame", {
-                Parent = window,
-                BackgroundTransparency = 1,
-                Position = UDim2.new(0, 18, 0, 145),
-                Size = UDim2.new(1, -36, 1, -163)
-            })
-
-            local pages = {}
-            local pageButtons = {}
-            local selectedPage = nil
-            local visible = true
-            local destroyed = false
-            local dragLatency = 0.055
-
-            makeDrag(headerFrame, window, dragLatency)
-
-            local function showWindow(state)
-                if destroyed then
-                    return
+            Information.Object.InputChanged:Connect(
+                function(inp)
+                    if inp.UserInputType == Enum.UserInputType.MouseMovement then
+                        input = inp
+                    end
                 end
+            )
 
-                visible = state
+            game:GetService("UserInputService").InputChanged:Connect(
+                function(inp)
+                    if inp == input and toggled then
+                        updateInput(inp)
+                    end
+                end
+            )
+        end
+
+        -- String Generator
+        local function genKey()
+            local real = ""
+            local chars = {}
+            local function setChar(a, z)
+                for i = string.byte(a), string.byte(z) do
+                    table.insert(chars, string.char(i))
+                end
+            end
+            local function getKey()
+                local keys = {
+                    key1 = {},
+                    key2 = {},
+                    key3 = {},
+                    key4 = {}
+                }
+                for real1 = 1, 5 do
+                    keys.key1[real1] = tostring(chars[math.random(1, #chars)])
+                end
+                for real2 = 1, 5 do
+                    keys.key2[real2] = tostring(chars[math.random(1, #chars)])
+                end
+                for real3 = 1, 5 do
+                    keys.key3[real3] = tostring(chars[math.random(1, #chars)])
+                end
+                for real4 = 1, 5 do
+                    keys.key4[real4] = tostring(chars[math.random(1, #chars)])
+                end
+                return "ui_[" ..
+                    table.concat(keys.key1) ..
+                        "-" ..
+                            table.concat(keys.key2) ..
+                                "-" .. table.concat(keys.key3) .. "-" .. table.concat(keys.key4) .. "]"
+            end
+            setChar("A", "Z")
+            setChar("0", "9")
+            return getKey()
+        end
+
+        -- Window function
+        local Interface = {}
+        function Interface:Start(Configuration)
+            ui = true
+            Configuration = Configuration or {}
+            Configuration = {
+                Header = Configuration.Header or "hash hub",
+                Version = Configuration.Version or "2.6.3",
+                Footer = Configuration.Footer or
+                    "welcome, " ..
+                        game.Players.LocalPlayer.Name ..
+                            ", please wait.",
+                VisibleKeybind = Configuration.VisibleKeybind or Enum.KeyCode.RightAlt
+            }
+
+            local private = Instance.new("ScreenGui")
+            local design = Instance.new("Frame")
+            local design_1 = Instance.new("Frame")
+            local layout_design_1 = Instance.new("UIListLayout")
+            local background = Instance.new("Frame")
+            local container_tabs = Instance.new("Frame")
+            local header_label = Instance.new("TextLabel")
+            local padding_header_label = Instance.new("UIPadding")
+            local footer_label = Instance.new("TextLabel")
+            local padding_footer_label = Instance.new("UIPadding")
+            local cut_tab_buttons = Instance.new("Frame")
+            local cut_header = Instance.new("Frame")
+            local cut_footer = Instance.new("Frame")
+            local container_tab_buttons = Instance.new("Frame")
+            local layout_tab_buttons = Instance.new("UIListLayout")
+            local padding_tab_buttons = Instance.new("UIPadding")
+            local layout_design = Instance.new("UIListLayout")
+
+            private.Name = genKey()
+            private.Parent = CoreGuiService
+            private.IgnoreGuiInset = true
+            HH_AutoSkin(private)
+
+            design.Name = "design"
+            design.Parent = private
+            design.AnchorPoint = Vector2.new(0.5, 0.5)
+            design.BackgroundColor3 = HH_THEME.Dark
+            design.BackgroundTransparency = 0
+            design.BorderColor3 = HH_THEME.Line
+            design.Position = UDim2.new(0.5, 0, 0.5, 0)
+            design.Size = UDim2.new(0, 513, 0, 585)
+            design.ClipsDescendants = false
+
+            local hhWindowScale = Instance.new("UIScale")
+            hhWindowScale.Name = "hhWindowScale"
+            hhWindowScale.Scale = 1
+            hhWindowScale.Parent = design
+            designLatency = 0.075
+            Drag(
+                {
+                    Object = design,
+                    Latency = designLatency
+                }
+            )
+            local visKey = Configuration.VisibleKeybind
+            local hhVisible = true
+            local hhBusy = false
+            local hhOpenPosition = UDim2.new(0.5, 0, 0.5, 0)
+            local hhClosedPosition = UDim2.new(0.5, 0, 0.515, 0)
+
+            local function hhSetVisible(state)
+                if hhBusy or hhVisible == state then return end
+                hhBusy = true
+                hhVisible = state
+                design.Visible = true
 
                 if state then
-                    screen.Enabled = true
-                    window.Visible = true
-
-                    tween(dim, EASE_MED, {BackgroundTransparency = 0.08})
-                    tween(window, EASE_SLOW, {
-                        Position = UDim2.fromScale(0.5, 0.5),
-                        GroupTransparency = 0
-                    })
-                    tween(winScale, EASE_SLOW, {Scale = 1})
+                    design.Position = hhClosedPosition
+                    hhWindowScale.Scale = 0.965
+                    HH_Tween(design, 0.32, {Position = hhOpenPosition}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                    HH_Tween(hhWindowScale, 0.32, {Scale = 1}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                    task.delay(0.34, function() hhBusy = false end)
                 else
-                    tween(dim, EASE_MED, {BackgroundTransparency = 1})
-                    tween(winScale, EASE_MED, {Scale = 0.965})
-                    local closeTween = tween(window, EASE_MED, {
-                        Position = UDim2.fromScale(0.5, 0.485),
-                        GroupTransparency = 1
-                    })
-
-                    task.spawn(function()
-                        closeTween.Completed:Wait()
-                        if not visible and not destroyed then
-                            screen.Enabled = false
-                        end
+                    HH_Tween(hhWindowScale, 0.24, {Scale = 0.965}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                    local closeTween = HH_Tween(design, 0.24, {Position = hhClosedPosition}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                    closeTween.Completed:Connect(function()
+                        design.Visible = false
+                        hhBusy = false
                     end)
                 end
             end
 
-            local function selectPage(pageData)
-                if selectedPage == pageData then
-                    return
-                end
-
-                for _, data in ipairs(pages) do
-                    if data.Page == pageData.Page then
-                        data.Page.Visible = true
-                        tween(data.Page, EASE_MED, {GroupTransparency = 0})
-                    else
-                        local pg = data.Page
-                        tween(pg, EASE_FAST, {GroupTransparency = 1})
-                        task.delay(0.16, function()
-                            if selectedPage ~= data and pg.Parent then
-                                pg.Visible = false
-                            end
-                        end)
+            UserInputService.InputBegan:Connect(
+                function(i, gameProcessed)
+                    if not gameProcessed and i.KeyCode == visKey then
+                        hhSetVisible(not hhVisible)
                     end
                 end
+            )
 
-                for btn, data in pairs(pageButtons) do
-                    local isActive = data == pageData
-                    local line = btn:FindFirstChild("Accent")
-                    local txt = btn:FindFirstChild("Text")
+            design_1.Name = "design_1"
+            design_1.Parent = design
+            design_1.AnchorPoint = Vector2.new(0.5, 0.5)
+            design_1.BackgroundColor3 = HH_THEME.Dark
+            design_1.BorderColor3 = HH_THEME.Line
+            design_1.BorderSizePixel = 0
+            design_1.Position = UDim2.new(0.5, 0, 0.5, 0)
+            design_1.Size = UDim2.new(0, 509, 0, 581)
 
-                    tween(btn, EASE_FAST, {
-                        BackgroundTransparency = isActive and 0 or 0.55,
-                        BackgroundColor3 = isActive and Color3.fromRGB(24, 24, 24) or Color3.fromRGB(18, 18, 18)
-                    })
+            layout_design_1.Name = "layout_design_1"
+            layout_design_1.Parent = design_1
+            layout_design_1.HorizontalAlignment = Enum.HorizontalAlignment.Center
+            layout_design_1.SortOrder = Enum.SortOrder.LayoutOrder
+            layout_design_1.VerticalAlignment = Enum.VerticalAlignment.Center
 
-                    if line then
-                        tween(line, EASE_FAST, {
-                            Size = isActive and UDim2.new(1, -14, 0, 1) or UDim2.new(0, 0, 0, 1),
-                            BackgroundTransparency = isActive and 0.15 or 1
-                        })
-                    end
+            background.Name = "background"
+            background.Parent = design_1
+            background.AnchorPoint = Vector2.new(0.5, 0.5)
+            background.BackgroundColor3 = HH_THEME.Dark
+            background.BorderColor3 = HH_THEME.Line
+            background.BorderSizePixel = 0
+            background.Position = UDim2.new(0.5, 0, 0.5, 0)
+            background.Size = UDim2.new(0, 505, 0, 577)
 
-                    if txt then
-                        tween(txt, EASE_FAST, {
-                            TextColor3 = isActive and THEME.TextBright or THEME.Muted
-                        })
-                    end
-                end
+            container_tabs.Name = "container_tabs"
+            container_tabs.Parent = background
+            container_tabs.BackgroundColor3 = HH_THEME.Dark
+            container_tabs.BorderSizePixel = 0
+            container_tabs.Position = UDim2.new(0, 0, 0, 86)
+            container_tabs.Size = UDim2.new(0, 504, 0, 469)
 
-                selectedPage = pageData
-                tinyFooter.Text = htmlEscape(pageData.Footer or footer)
-            end
+            header_label.Name = "header_label"
+            header_label.Parent = background
+            header_label.BackgroundColor3 = HH_THEME.Dark
+            header_label.BackgroundTransparency = 1
+            header_label.BorderSizePixel = 0
+            header_label.Size = UDim2.new(0, 505, 0, 48)
+            header_label.Font = Enum.Font.Gotham
+            header_label.LineHeight = 1.150
+            header_label.RichText = true
+            header_label.Text = string.lower(Configuration.Header) .. ' <font color="rgb(125,95,210)">[' .. Configuration.Version .. ']</font>'
+            header_label.TextColor3 = HH_THEME.Text
+            header_label.TextSize = 24.000
+            header_label.TextStrokeColor3 = Color3.fromRGB(16, 16, 16)
+            header_label.TextStrokeTransparency = 1
+            header_label.TextXAlignment = Enum.TextXAlignment.Center
+            header_label.TextTruncate = "AtEnd"
+
+            padding_header_label.Name = "padding_header_label"
+            padding_header_label.Parent = header_label
+            padding_header_label.PaddingLeft = UDim.new(0, 0)
+
+            footer_label.Name = "footer_label"
+            footer_label.Parent = background
+            footer_label.BackgroundColor3 = HH_THEME.Dark
+            footer_label.BackgroundTransparency = 1
+            footer_label.BorderSizePixel = 0
+            footer_label.Position = UDim2.new(0, 0, 0.967071056, 0)
+            footer_label.Size = UDim2.new(0, 505, 0, 19)
+            footer_label.Font = Enum.Font.Gotham
+            footer_label.LineHeight = 1.150
+            footer_label.Text = Configuration.Footer
+            footer_label.TextColor3 = HH_THEME.Muted
+            footer_label.TextSize = 13.000
+            footer_label.TextStrokeColor3 = Color3.fromRGB(16, 16, 16)
+            footer_label.TextStrokeTransparency = 1
+            footer_label.TextXAlignment = Enum.TextXAlignment.Center
+            footer_label.TextTruncate = "AtEnd"
+
+            padding_footer_label.Name = "padding_footer_label"
+            padding_footer_label.Parent = footer_label
+            padding_footer_label.PaddingLeft = UDim.new(0, 0)
+
+            cut_tab_buttons.Name = "cut_tab_buttons"
+            cut_tab_buttons.Parent = background
+            cut_tab_buttons.BackgroundColor3 = HH_THEME.Line
+            cut_tab_buttons.BackgroundTransparency = 0.25
+            cut_tab_buttons.BorderSizePixel = 0
+            cut_tab_buttons.Position = UDim2.new(0, 0, 0, 84)
+            cut_tab_buttons.Size = UDim2.new(0, 505, 0, 1)
+
+            cut_header.Name = "cut_header"
+            cut_header.Parent = background
+            cut_header.AnchorPoint = Vector2.new(0.5, 0)
+            cut_header.BackgroundColor3 = HH_THEME.Purple
+            cut_header.BackgroundTransparency = 0.15
+            cut_header.BorderSizePixel = 0
+            cut_header.Position = UDim2.new(0.5, 0, 0, 50)
+            cut_header.Size = UDim2.new(0, 112, 0, 1)
+
+            cut_footer.Name = "cut_footer"
+            cut_footer.Parent = background
+            cut_footer.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            cut_footer.BackgroundTransparency = 0.600
+            cut_footer.BorderSizePixel = 0
+            cut_footer.Position = UDim2.new(0, 0, 0.965337932, 0)
+            cut_footer.Size = UDim2.new(0, 505, 0, 1)
+
+            container_tab_buttons.Name = "container_tab_buttons"
+            container_tab_buttons.Parent = background
+            container_tab_buttons.BackgroundColor3 = HH_THEME.Dark
+            container_tab_buttons.BorderSizePixel = 0
+            container_tab_buttons.Position = UDim2.new(0, 0, 0, 54)
+            container_tab_buttons.Size = UDim2.new(0, 505, 0, 30)
+
+            layout_tab_buttons.Name = "layout_tab_buttons"
+            layout_tab_buttons.Parent = container_tab_buttons
+            layout_tab_buttons.FillDirection = Enum.FillDirection.Horizontal
+            layout_tab_buttons.SortOrder = Enum.SortOrder.LayoutOrder
+            layout_tab_buttons.VerticalAlignment = Enum.VerticalAlignment.Bottom
+            layout_tab_buttons.Padding = UDim.new(0, 4)
+
+            padding_tab_buttons.Name = "padding_tab_buttons"
+            padding_tab_buttons.Parent = container_tab_buttons
+            padding_tab_buttons.PaddingBottom = UDim.new(0, -1)
+            padding_tab_buttons.PaddingLeft = UDim.new(0, 6)
+            padding_tab_buttons.PaddingRight = UDim.new(0, 6)
+
+            layout_design.Name = "layout_design"
+            layout_design.Parent = design
+            layout_design.HorizontalAlignment = Enum.HorizontalAlignment.Center
+            layout_design.SortOrder = Enum.SortOrder.LayoutOrder
+            layout_design.VerticalAlignment = Enum.VerticalAlignment.Center
 
             local InterfaceTools = {}
-
+            local isFirstPageAdded = true
             function InterfaceTools:CreatePage(Configuration_Page)
-                Configuration_Page = Configuration_Page or {}
-
-                local subject = Configuration_Page.Subject or "page"
-                local pageFooter = Configuration_Page.Footer or footer
-
-                local buttonWidth = math.max(68, TextService:GetTextSize(subject, 13, Enum.Font.Gotham, Vector2.new(math.huge, 22)).X + 28)
-
-                local tabButton = create("TextButton", {
-                    Parent = tabBar,
-                    BackgroundColor3 = Color3.fromRGB(18, 18, 18),
-                    BackgroundTransparency = 0.55,
-                    BorderSizePixel = 0,
-                    AutoButtonColor = false,
-                    Text = "",
-                    Size = UDim2.fromOffset(buttonWidth, 28)
-                })
-
-                corner(tabButton, 7)
-                stroke(tabButton, THEME.StrokeSoft, 0.35, 1)
-
-                local tabText = makeText(tabButton, {
-                    GuiSize = UDim2.new(1, -16, 1, 0),
-                    Position = UDim2.new(0, 8, 0, 0),
-                    Text = subject,
-                    Font = Enum.Font.Gotham,
-                    Size = 13,
-                    Color = THEME.Muted,
-                    X = Enum.TextXAlignment.Center
-                })
-                tabText.Name = "Text"
-
-                local accent = create("Frame", {
-                    Name = "Accent",
-                    Parent = tabButton,
-                    AnchorPoint = Vector2.new(0.5, 1),
-                    Position = UDim2.new(0.5, 0, 1, -4),
-                    Size = UDim2.new(0, 0, 0, 1),
-                    BackgroundColor3 = THEME.Purple,
-                    BackgroundTransparency = 1,
-                    BorderSizePixel = 0
-                })
-
-                corner(accent, 2)
-
-                local page = create("CanvasGroup", {
-                    Parent = body,
-                    BackgroundTransparency = 1,
-                    BorderSizePixel = 0,
-                    Size = UDim2.fromScale(1, 1),
-                    Visible = false,
-                    GroupTransparency = 1
-                })
-
-                local left = create("ScrollingFrame", {
-                    Parent = page,
-                    Active = true,
-                    BackgroundTransparency = 1,
-                    BorderSizePixel = 0,
-                    Position = UDim2.new(0, 0, 0, 0),
-                    Size = UDim2.new(0.5, -6, 1, 0),
-                    CanvasSize = UDim2.new(0, 0, 0, 0),
-                    ScrollBarThickness = 2,
-                    ScrollBarImageColor3 = THEME.Purple,
-                    ScrollBarImageTransparency = 0.35
-                })
-
-                local right = create("ScrollingFrame", {
-                    Parent = page,
-                    Active = true,
-                    BackgroundTransparency = 1,
-                    BorderSizePixel = 0,
-                    Position = UDim2.new(0.5, 6, 0, 0),
-                    Size = UDim2.new(0.5, -6, 1, 0),
-                    CanvasSize = UDim2.new(0, 0, 0, 0),
-                    ScrollBarThickness = 2,
-                    ScrollBarImageColor3 = THEME.Purple,
-                    ScrollBarImageTransparency = 0.35
-                })
-
-                local leftLayout = listLayout(left, Enum.FillDirection.Vertical, 10)
-                local rightLayout = listLayout(right, Enum.FillDirection.Vertical, 10)
-                padding(left, 0, 4, 0, 8)
-                padding(right, 4, 0, 0, 8)
-
-                local function updateCanvas()
-                    left.CanvasSize = UDim2.new(0, 0, 0, leftLayout.AbsoluteContentSize.Y + 12)
-                    right.CanvasSize = UDim2.new(0, 0, 0, rightLayout.AbsoluteContentSize.Y + 12)
-                end
-
-                leftLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
-                rightLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
-
-                local pageData = {
-                    Page = page,
-                    Footer = pageFooter,
-                    Left = left,
-                    Right = right,
-                    LeftLayout = leftLayout,
-                    RightLayout = rightLayout,
-                    UpdateCanvas = updateCanvas
+                Configuration_Page = {
+                    Subject = Configuration_Page.Subject or "undefined subject",
+                    Footer = Configuration_Page.Footer or "undefined footer"
                 }
 
-                table.insert(pages, pageData)
-                pageButtons[tabButton] = pageData
+                local button_tab = Instance.new("TextButton")
+                local cut_button_tab = Instance.new("Frame")
+                local layout_button_tab = Instance.new("UIListLayout")
+                local tab = Instance.new("Frame")
+                local container_component_right = Instance.new("ScrollingFrame")
+                local layout_components_right = Instance.new("UIListLayout")
+                local padding_components_right = Instance.new("UIPadding")
+                local container_component_left = Instance.new("ScrollingFrame")
+                local layout_components_left = Instance.new("UIListLayout")
+                local padding_components_left = Instance.new("UIPadding")
+                local layout_tab = Instance.new("UIListLayout")
 
-                tabButton.MouseButton1Click:Connect(function()
-                    selectPage(pageData)
-                end)
+                button_tab.Name = "button_tab"
+                button_tab.Parent = container_tab_buttons
+                button_tab.BackgroundColor3 = HH_THEME.Dark2
+                button_tab.BackgroundTransparency = 0.35
+                button_tab.BorderColor3 = HH_THEME.Line
+                button_tab.Position = UDim2.new(0.0118811885, 0, 0.233333334, 0)
+                button_tab.Size = UDim2.new(0, math.max(15, button_tab.TextBounds.X), 0, 22)
+                button_tab.AutoButtonColor = false
+                button_tab.Font = Enum.Font.Gotham
+                button_tab.LineHeight = 1.150
+                button_tab.Text = Configuration_Page.Subject
+                button_tab.TextColor3 = Color3.fromRGB(180, 180, 180)
+                button_tab.TextSize = 14.000
+                button_tab.TextStrokeColor3 = Color3.fromRGB(16, 16, 16)
+                button_tab.TextStrokeTransparency = 0.300
+                button_tab.BorderMode = "Inset"
+                button_tab.TextTransparency = 0.4
 
-                tabButton.MouseEnter:Connect(function()
-                    if selectedPage ~= pageData then
-                        tween(tabButton, EASE_FAST, {BackgroundTransparency = 0.25})
-                        tween(tabText, EASE_FAST, {TextColor3 = THEME.Text})
-                    end
-                end)
+                local newTabButtonSize =
+                    TextService:GetTextSize(
+                    button_tab.Text,
+                    button_tab.TextSize,
+                    button_tab.Font,
+                    Vector2.new(math.huge, math.huge)
+                )
+                button_tab.Size = UDim2.new(0, 12 + newTabButtonSize.X, 0, 22)
 
-                tabButton.MouseLeave:Connect(function()
-                    if selectedPage ~= pageData then
-                        tween(tabButton, EASE_FAST, {BackgroundTransparency = 0.55})
-                        tween(tabText, EASE_FAST, {TextColor3 = THEME.Muted})
-                    end
-                end)
+                cut_button_tab.Name = "cut_button_tab"
+                cut_button_tab.Parent = button_tab
+                cut_button_tab.BackgroundColor3 = Color3.fromRGB(27, 27, 27)
+                cut_button_tab.BorderColor3 = Color3.fromRGB(27, 27, 27)
+                cut_button_tab.Position = UDim2.new(0, 0, 1, 0)
+                cut_button_tab.Size = UDim2.new(0, button_tab.Size.X.Offset - 4, 0, 1)
+                cut_button_tab.ZIndex = 2
+                cut_button_tab.Visible = false
 
-                if not selectedPage then
-                    selectPage(pageData)
+                layout_button_tab.Name = "layout_button_tab"
+                layout_button_tab.Parent = button_tab
+                layout_button_tab.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                layout_button_tab.SortOrder = Enum.SortOrder.LayoutOrder
+                layout_button_tab.VerticalAlignment = Enum.VerticalAlignment.Bottom
+
+                tab.Name = "tab"
+                tab.Parent = container_tabs
+                tab.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                tab.BackgroundTransparency = 1.000
+                tab.Size = UDim2.new(0, 504, 0, 469)
+                tab.Visible = false
+
+                container_component_right.Name = "container_component_right"
+                container_component_right.Parent = tab
+                container_component_right.Active = true
+                container_component_right.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                container_component_right.BackgroundTransparency = 1.000
+                container_component_right.BorderSizePixel = 0
+                container_component_right.Size = UDim2.new(0, 252, 0, 469)
+                container_component_right.ScrollBarThickness = 0
+
+                layout_components_right.Name = "layout_components_right"
+                layout_components_right.Parent = container_component_right
+                layout_components_right.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                layout_components_right.SortOrder = Enum.SortOrder.LayoutOrder
+                layout_components_right.Padding = UDim.new(0, 5)
+
+                padding_components_right.Name = "padding_components_right"
+                padding_components_right.Parent = container_component_right
+                padding_components_right.PaddingTop = UDim.new(0, 10)
+
+                container_component_left.Name = "container_component_left"
+                container_component_left.Parent = tab
+                container_component_left.Active = true
+                container_component_left.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                container_component_left.BackgroundTransparency = 1.000
+                container_component_left.BorderSizePixel = 0
+                container_component_left.Size = UDim2.new(0, 252, 0, 469)
+                container_component_left.CanvasSize = UDim2.new(0, 0, 0, 0)
+                container_component_left.ScrollBarThickness = 0
+
+                layout_components_left.Name = "layout_components_left"
+                layout_components_left.Parent = container_component_left
+                layout_components_left.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                layout_components_left.SortOrder = Enum.SortOrder.LayoutOrder
+                layout_components_left.Padding = UDim.new(0, 5)
+
+                padding_components_left.Name = "padding_components_left"
+                padding_components_left.Parent = container_component_left
+                padding_components_left.PaddingTop = UDim.new(0, 10)
+
+                layout_tab.Name = "layout_tab"
+                layout_tab.Parent = tab
+                layout_tab.FillDirection = Enum.FillDirection.Horizontal
+                layout_tab.SortOrder = Enum.SortOrder.LayoutOrder
+                layout_tab.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                local function updateSize()
+                    local csL, csR =
+                        layout_components_left.AbsoluteContentSize.Y,
+                        layout_components_right.AbsoluteContentSize.Y
+                    container_component_left.CanvasSize = UDim2.new(0, 0, 0, csL + 9)
+                    container_component_right.CanvasSize = UDim2.new(0, 0, 0, csR + 9)
                 end
+
+                local PageIsVisible = false
+
+                if isFirstPageAdded then
+                    PageIsVisible = true
+                    tab.Visible = true
+                    button_tab.BackgroundColor3 = HH_THEME.Dark2
+                    button_tab.BackgroundTransparency = 0
+                    button_tab.TextColor3 = HH_THEME.Text
+                    button_tab.TextTransparency = 0
+                    button_tab.TextStrokeTransparency = 0.3
+                    button_tab.Size = UDim2.new(0, button_tab.Size.X.Offset, 0, 24)
+                    cut_button_tab.Visible = true
+                    footer_label.Text = Configuration_Page.Footer
+                    updateSize()
+                end
+
+                button_tab.MouseButton1Click:Connect(
+                    function()
+                        for i, v in next, container_tabs:GetChildren() do
+                            if v:IsA("Frame") then
+                                v.Visible = false
+                            end
+                        end
+                        for i, v in next, container_tab_buttons:GetChildren() do
+                            if v:isA("TextButton") then
+                                v.BackgroundColor3 = HH_THEME.Dark2
+                                v.BackgroundTransparency = 0.35
+                                v.TextColor3 = Color3.fromRGB(180, 180, 180)
+                                v.TextTransparency = 0.4
+                                v.TextStrokeTransparency = 0.4
+                                v.Size = UDim2.new(0, v.Size.X.Offset, 0, 22)
+                                for z, x in next, v:GetChildren() do
+                                    if x:IsA("Frame") then
+                                        x.Visible = false
+                                    end
+                                end
+                            end
+                        end
+                        tab.Visible = true
+                        button_tab.BackgroundColor3 = HH_THEME.Dark2
+                        button_tab.BackgroundTransparency = 0
+                        button_tab.TextColor3 = HH_THEME.Text
+                        button_tab.TextTransparency = 0
+                        button_tab.TextStrokeTransparency = 0.3
+                        button_tab.Size = UDim2.new(0, button_tab.Size.X.Offset, 0, 24)
+                        cut_button_tab.Visible = true
+                        footer_label.Text = Configuration_Page.Footer
+                        updateSize()
+                    end
+                )
+
+                isFirstPageAdded = false
 
                 local PageTools = {}
-
                 function PageTools:CreateSection(Configuration_Section)
-                    Configuration_Section = Configuration_Section or {}
+                    Configuration_Section = {
+                        Header = Configuration_Section.Header or "Section"
+                    }
 
-                    local sectionHeader = Configuration_Section.Header or "section"
-                    local parentColumn
-
-                    if pageData.LeftLayout.AbsoluteContentSize.Y <= pageData.RightLayout.AbsoluteContentSize.Y then
-                        parentColumn = pageData.Left
+                    local alignedContainer
+                    if layout_components_left.AbsoluteContentSize.Y > layout_components_right.AbsoluteContentSize.Y then
+                        alignedContainer = container_component_right
                     else
-                        parentColumn = pageData.Right
+                        alignedContainer = container_component_left
                     end
 
-                    local section = create("Frame", {
-                        Parent = parentColumn,
-                        BackgroundColor3 = THEME.Card2,
-                        BorderSizePixel = 0,
-                        Size = UDim2.new(1, -2, 0, 44),
-                        ClipsDescendants = false
-                    })
+                    local section = Instance.new("Frame")
+                    local layout_section = Instance.new("UIListLayout")
+                    local section_design = Instance.new("Frame")
+                    local section_header = Instance.new("TextLabel")
+                    local padding_section_header = Instance.new("UIPadding")
+                    local constraint_section = Instance.new("UISizeConstraint")
 
-                    corner(section, 9)
-                    stroke(section, THEME.StrokeSoft, 0.16, 1)
-                    setGradient(section, Color3.fromRGB(23, 23, 23), Color3.fromRGB(18, 18, 18), 90)
+                    section.Name = "section"
+                    section.Parent = alignedContainer
+                    section.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+                    section.BorderColor3 = Color3.fromRGB(30, 30, 30)
+                    section.Position = UDim2.new(0.0317460336, 0, 0.0197238661, 0)
+                    section.Size = UDim2.new(0, 236, 0, 1)
 
-                    local purpleTop = create("Frame", {
-                        Parent = section,
-                        BackgroundColor3 = THEME.Purple,
-                        BackgroundTransparency = 0.2,
-                        BorderSizePixel = 0,
-                        Size = UDim2.new(1, 0, 0, 1)
-                    })
+                    layout_section.Name = "layout_section"
+                    layout_section.Parent = section
+                    layout_section.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                    layout_section.SortOrder = Enum.SortOrder.LayoutOrder
+                    layout_section.Padding = UDim.new(0, 3)
 
-                    local sectionList = listLayout(section, Enum.FillDirection.Vertical, 6)
-                    sectionList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-                    padding(section, 10, 10, sectionHeader == "" and 11 or 12, 10)
+                    section_design.Name = "section_design"
+                    section_design.Parent = section
+                    section_design.BackgroundColor3 = Color3.fromRGB(125, 95, 210)
+                    section_design.BorderSizePixel = 0
+                    section_design.Size = UDim2.new(0, 236, 0, 1)
 
-                    local headerLabel = nil
-                    if sectionHeader ~= "" then
-                        headerLabel = makeText(section, {
-                            GuiSize = UDim2.new(1, 0, 0, 20),
-                            Text = sectionHeader,
-                            Font = Enum.Font.Gotham,
-                            Size = 13,
-                            Color = THEME.TextBright,
-                            X = Enum.TextXAlignment.Left
-                        })
-                        headerLabel.LayoutOrder = 1
+                    section_header.Name = "section_header"
+                    section_header.Parent = section
+                    section_header.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    section_header.BackgroundTransparency = 1.000
+                    section_header.BorderSizePixel = 0
+                    section_header.Position = UDim2.new(0, 0, 0.0399999991, 0)
+                    section_header.Size = UDim2.new(0, 236, 0, 18)
+                    section_header.Font = Enum.Font.Gotham
+                    section_header.LineHeight = 1.150
+                    section_header.Text = Configuration_Section.Header
+                    section_header.TextColor3 = Color3.fromRGB(225, 225, 225)
+                    section_header.TextSize = 14.000
+                    section_header.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
+                    section_header.TextStrokeTransparency = 0.300
+                    section_header.TextXAlignment = Enum.TextXAlignment.Left
+                    section_header.TextTruncate = "AtEnd"
+
+                    padding_section_header.Name = "padding_section_header"
+                    padding_section_header.Parent = section_header
+                    padding_section_header.PaddingLeft = UDim.new(0, 7)
+
+                    constraint_section.Name = "constraint_section"
+                    constraint_section.Parent = section
+                    constraint_section.MinSize = Vector2.new(236, 26)
+
+                    if Configuration_Section.Header == "" then
+                        section_header:Destroy()
                     end
+
+                    updateSize()
 
                     local function updateSection()
-                        local h = sectionList.AbsoluteContentSize.Y + 22
-                        section.Size = UDim2.new(1, -2, 0, math.max(h, 42))
-                        pageData.UpdateCanvas()
+                        local sc = layout_section.AbsoluteContentSize.Y
+                        section.Size = UDim2.new(0, 236, 0, sc + 4)
                     end
-
-                    sectionList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateSection)
-                    task.defer(updateSection)
 
                     local SectionTools = {}
-
                     function SectionTools:CreateButton(Configuration_Button)
-                        Configuration_Button = Configuration_Button or {}
+                        Configuration_Button = {
+                            Text = Configuration_Button.Text or "button",
+                            Script = Configuration_Button.Script or function()
+                                end
+                        }
 
-                        local text = Configuration_Button.Text or "button"
-                        local callback = Configuration_Button.Script or function() end
+                        local design_button = Instance.new("Frame")
+                        local layout_design_button = Instance.new("UIListLayout")
+                        local button = Instance.new("TextButton")
+                        local gradient_design_button = Instance.new("UIGradient")
+                        local layout_button = Instance.new("UIListLayout")
+                        local button_text = Instance.new("TextLabel")
+                        local gradient_design_button_2 = Instance.new("UIGradient")
 
-                        local frame = makeButtonVisual(section, 32)
-                        frame.LayoutOrder = 10
-                        connectHover(frame, THEME.StrokeSoft, THEME.Purple)
+                        design_button.Name = "design_button"
+                        design_button.Parent = section
+                        design_button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_button.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_button.Size = UDim2.new(0, 221, 0, 16)
 
-                        local button = create("TextButton", {
-                            Parent = frame,
-                            BackgroundTransparency = 1,
-                            Text = "",
-                            AutoButtonColor = false,
-                            Size = UDim2.fromScale(1, 1)
-                        })
+                        layout_design_button.Name = "layout_design_button"
+                        layout_design_button.Parent = design_button
+                        layout_design_button.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_design_button.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_button.VerticalAlignment = Enum.VerticalAlignment.Center
 
-                        local label = makeText(button, {
-                            GuiSize = UDim2.new(1, -22, 1, 0),
-                            Position = UDim2.new(0, 11, 0, 0),
-                            Text = text,
-                            Font = Enum.Font.Gotham,
-                            Size = 13,
-                            Color = THEME.Text,
-                            X = Enum.TextXAlignment.Center
-                        })
+                        button.Name = "button"
+                        button.Parent = design_button
+                        button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        button.BorderSizePixel = 0
+                        button.Size = UDim2.new(0, 219, 0, 14)
+                        button.AutoButtonColor = false
+                        button.Font = Enum.Font.Gotham
+                        button.Text = ""
+                        button.TextColor3 = Color3.fromRGB(225, 225, 225)
+                        button.TextSize = 14.000
 
-                        button.MouseButton1Down:Connect(function()
-                            tween(frame, EASE_FAST, {BackgroundColor3 = Color3.fromRGB(16, 16, 16)})
-                            tween(label, EASE_FAST, {TextColor3 = THEME.Purple})
-                        end)
+                        gradient_design_button.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                        }
+                        gradient_design_button.Rotation = 90
+                        gradient_design_button.Name = "gradient_design_button"
+                        gradient_design_button.Parent = button
 
-                        button.MouseButton1Up:Connect(function()
-                            tween(frame, EASE_FAST, {BackgroundColor3 = THEME.Card2})
-                            tween(label, EASE_FAST, {TextColor3 = THEME.Text})
-                        end)
+                        layout_button.Name = "layout_button"
+                        layout_button.Parent = button
+                        layout_button.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_button.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_button.VerticalAlignment = Enum.VerticalAlignment.Center
 
-                        button.MouseButton1Click:Connect(function()
-                            pcall(callback)
-                        end)
+                        button_text.Name = "button_text"
+                        button_text.Parent = button
+                        button_text.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        button_text.BackgroundTransparency = 1.000
+                        button_text.Size = UDim2.new(0, 219, 0, 14)
+                        button_text.Font = Enum.Font.Gotham
+                        button_text.LineHeight = 1
+                        button_text.Text = Configuration_Button.Text
+                        button_text.TextColor3 = Color3.fromRGB(220, 220, 220)
+                        button_text.TextSize = 13.000
+                        button_text.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
+                        button_text.TextStrokeTransparency = 0.300
+
+                        gradient_design_button_2.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                        }
+                        gradient_design_button_2.Rotation = 90
+                        gradient_design_button_2.Name = "gradient_design_button"
+                        gradient_design_button_2.Parent = design_button
 
                         updateSection()
+                        updateSize()
+
+                        button.MouseEnter:Connect(
+                            function()
+                                gradient_design_button_2.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(125, 95, 210)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
+                                }
+                            end
+                        )
+                        button.MouseLeave:Connect(
+                            function()
+                                gradient_design_button_2.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                }
+                            end
+                        )
+
+                        button.MouseButton1Down:Connect(
+                            function()
+                                gradient_design_button.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(24, 24, 24)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                }
+                            end
+                        )
+                        button.MouseButton1Up:Connect(
+                            function()
+                                gradient_design_button.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(47, 47, 47)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(42, 42, 42))
+                                }
+                                wait(.2)
+                                gradient_design_button.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(31, 31, 31)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                                }
+                            end
+                        )
+
+                        button.MouseButton1Click:Connect(
+                            function()
+                                Configuration_Button.Script()
+                            end
+                        )
 
                         local ButtonTools = {}
-
-                        function ButtonTools.SetText(newText)
-                            label.Text = tostring(newText)
+                        function ButtonTools.SetText(new)
+                            button_text.Text = new
                         end
-
-                        function ButtonTools.Destroy()
-                            frame:Destroy()
-                            updateSection()
+                        function SetLocalButtonText(new)
+                            button_text.Text = new
                         end
-
                         return ButtonTools
                     end
-
-                    local function makeToggleRow(text, defaultValue, callback, repeating, latency)
-                        local row = create("TextButton", {
-                            Parent = section,
-                            BackgroundTransparency = 1,
-                            Size = UDim2.new(1, 0, 0, 28),
-                            LayoutOrder = 10,
-                            AutoButtonColor = false,
-                            Text = ""
-                        })
-
-                        local label = makeText(row, {
-                            GuiSize = UDim2.new(1, -52, 1, 0),
-                            Position = UDim2.new(0, 0, 0, 0),
-                            Text = text,
-                            Font = Enum.Font.Gotham,
-                            Size = 13,
-                            Color = THEME.Text,
-                            X = Enum.TextXAlignment.Left
-                        })
-
-                        local hit = create("Frame", {
-                            Parent = row,
-                            AnchorPoint = Vector2.new(1, 0.5),
-                            Position = UDim2.new(1, 0, 0.5, 0),
-                            Size = UDim2.fromOffset(38, 18),
-                            BackgroundColor3 = Color3.fromRGB(30, 30, 30),
-                            BorderSizePixel = 0
-                        })
-
-                        corner(hit, 20)
-                        stroke(hit, THEME.StrokeSoft, 0.2, 1)
-
-                        local knob = create("Frame", {
-                            Parent = hit,
-                            AnchorPoint = Vector2.new(0, 0.5),
-                            Position = UDim2.new(0, 3, 0.5, 0),
-                            Size = UDim2.fromOffset(12, 12),
-                            BackgroundColor3 = THEME.Muted2,
-                            BorderSizePixel = 0
-                        })
-
-                        corner(knob, 20)
-
-                        local enabled = defaultValue and true or false
-                        local loopId = 0
-
-                        local function paint()
-                            tween(hit, EASE_FAST, {
-                                BackgroundColor3 = enabled and THEME.PurpleDark or Color3.fromRGB(30, 30, 30)
-                            })
-
-                            tween(knob, EASE_FAST, {
-                                Position = enabled and UDim2.new(1, -15, 0.5, 0) or UDim2.new(0, 3, 0.5, 0),
-                                BackgroundColor3 = enabled and THEME.Purple or THEME.Muted2
-                            })
-                        end
-
-                        local function runCallback()
-                            loopId += 1
-                            local thisLoop = loopId
-
-                            if repeating and enabled and latency and latency > 0 then
-                                task.spawn(function()
-                                    while enabled and thisLoop == loopId do
-                                        pcall(callback, true)
-                                        task.wait(latency)
-                                    end
-                                end)
-                            else
-                                pcall(callback, enabled)
-                            end
-                        end
-
-                        row.MouseButton1Click:Connect(function()
-                            enabled = not enabled
-                            paint()
-                            runCallback()
-                        end)
-
-                        paint()
-                        updateSection()
-
-                        local tools = {}
-
-                        function tools.SetText(newText)
-                            label.Text = tostring(newText)
-                        end
-
-                        function tools.SetValue(value)
-                            enabled = value and true or false
-                            paint()
-                            runCallback()
-                        end
-
-                        function tools.GetValue()
-                            return enabled
-                        end
-
-                        function tools.Destroy()
-                            row:Destroy()
-                            updateSection()
-                        end
-
-                        return tools
-                    end
-
                     function SectionTools:CreateToggle(Configuration_Toggle)
-                        Configuration_Toggle = Configuration_Toggle or {}
+                        Configuration_Toggle = {
+                            Text = Configuration_Toggle.Text or "toggle",
+                            Latency = Configuration_Toggle.Latency or 0,
+                            Script = Configuration_Toggle.Script or function()
+                                    print("toggled")
+                                end
+                        }
 
-                        return makeToggleRow(
-                            Configuration_Toggle.Text or "toggle",
-                            Configuration_Toggle.Default or false,
-                            Configuration_Toggle.Script or function() end,
-                            true,
-                            Configuration_Toggle.Latency or 0
-                        )
-                    end
+                        local button_toggle = Instance.new("TextButton")
+                        local layout_button_toggle = Instance.new("UIListLayout")
+                        local design_button_toggle = Instance.new("Frame")
+                        local layout_design_button_toggle = Instance.new("UIListLayout")
+                        local gradient_design_button_toggle = Instance.new("UIGradient")
+                        local design_button_toggle_2 = Instance.new("Frame")
+                        local layout_design_button_toggle_2 = Instance.new("UIListLayout")
+                        local gradient_design_button_toggle_2 = Instance.new("UIGradient")
+                        local padding_button_toggle = Instance.new("UIPadding")
 
-                    function SectionTools:CreateCheck(Configuration_Check)
-                        Configuration_Check = Configuration_Check or {}
+                        button_toggle.Name = "button_toggle"
+                        button_toggle.Parent = section
+                        button_toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        button_toggle.BackgroundTransparency = 1.000
+                        button_toggle.Position = UDim2.new(0, 0, 0.109170303, 0)
+                        button_toggle.Size = UDim2.new(0, 236, 0, 20)
+                        button_toggle.Font = Enum.Font.Gotham
+                        button_toggle.LineHeight = 1.250
+                        button_toggle.Text = "        " .. Configuration_Toggle.Text
+                        button_toggle.TextColor3 = Color3.fromRGB(220, 220, 220)
+                        button_toggle.TextSize = 14.000
+                        button_toggle.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
+                        button_toggle.TextStrokeTransparency = 0.300
+                        button_toggle.TextXAlignment = Enum.TextXAlignment.Left
 
-                        return makeToggleRow(
-                            Configuration_Check.Text or "check",
-                            Configuration_Check.Default or false,
-                            Configuration_Check.Script or function() end,
-                            false,
-                            0
-                        )
-                    end
+                        layout_button_toggle.Name = "layout_button_toggle"
+                        layout_button_toggle.Parent = button_toggle
+                        layout_button_toggle.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_button_toggle.VerticalAlignment = Enum.VerticalAlignment.Center
 
-                    function SectionTools:CreateDropdown(Configuration_Dropdown)
-                        Configuration_Dropdown = Configuration_Dropdown or {}
+                        design_button_toggle.Name = "design_button_toggle"
+                        design_button_toggle.Parent = button_toggle
+                        design_button_toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_button_toggle.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_button_toggle.Position = UDim2.new(0, 0, 0.192307696, 0)
+                        design_button_toggle.Size = UDim2.new(0, 14, 0, 14)
 
-                        local text = Configuration_Dropdown.Text or "dropdown"
-                        local default = Configuration_Dropdown.Default or ". . ."
-                        local options = Configuration_Dropdown.Options or {}
-                        local callback = Configuration_Dropdown.Script or function() end
+                        layout_design_button_toggle.Name = "layout_design_button_toggle"
+                        layout_design_button_toggle.Parent = design_button_toggle
+                        layout_design_button_toggle.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_design_button_toggle.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_button_toggle.VerticalAlignment = Enum.VerticalAlignment.Center
 
-                        local holder = create("Frame", {
-                            Parent = section,
-                            BackgroundTransparency = 1,
-                            Size = UDim2.new(1, 0, 0, 56),
-                            LayoutOrder = 10,
-                            ZIndex = 10
-                        })
+                        gradient_design_button_toggle.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                        }
+                        gradient_design_button_toggle.Rotation = 90
+                        gradient_design_button_toggle.Name = "gradient_design_button_toggle"
+                        gradient_design_button_toggle.Parent = design_button_toggle
 
-                        local label = makeText(holder, {
-                            GuiSize = UDim2.new(1, 0, 0, 18),
-                            Text = text,
-                            Font = Enum.Font.Gotham,
-                            Size = 13,
-                            Color = THEME.Text,
-                            X = Enum.TextXAlignment.Left,
-                            ZIndex = 11
-                        })
+                        design_button_toggle_2.Name = "design_button_toggle_2"
+                        design_button_toggle_2.Parent = design_button_toggle
+                        design_button_toggle_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_button_toggle_2.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_button_toggle_2.BorderSizePixel = 0
+                        design_button_toggle_2.Position = UDim2.new(0, 0, 0.192307696, 0)
+                        design_button_toggle_2.Size = UDim2.new(0, 12, 0, 12)
 
-                        local box = create("Frame", {
-                            Parent = holder,
-                            Position = UDim2.new(0, 0, 0, 22),
-                            Size = UDim2.new(1, 0, 0, 30),
-                            BackgroundColor3 = THEME.Card2,
-                            BorderSizePixel = 0,
-                            ClipsDescendants = true,
-                            ZIndex = 11
-                        })
+                        layout_design_button_toggle_2.Name = "layout_design_button_toggle_2"
+                        layout_design_button_toggle_2.Parent = design_button_toggle_2
+                        layout_design_button_toggle_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_design_button_toggle_2.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_button_toggle_2.VerticalAlignment = Enum.VerticalAlignment.Center
 
-                        corner(box, 7)
-                        stroke(box, THEME.StrokeSoft, 0.12, 1)
-                        setGradient(box, Color3.fromRGB(25, 25, 25), Color3.fromRGB(19, 19, 19), 90)
+                        gradient_design_button_toggle_2.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                        }
+                        gradient_design_button_toggle_2.Rotation = 90
+                        gradient_design_button_toggle_2.Name = "gradient_design_button_toggle_2"
+                        gradient_design_button_toggle_2.Parent = design_button_toggle_2
 
-                        local topButton = create("TextButton", {
-                            Parent = box,
-                            BackgroundTransparency = 1,
-                            Size = UDim2.new(1, 0, 0, 30),
-                            AutoButtonColor = false,
-                            Text = "",
-                            ZIndex = 12
-                        })
+                        padding_button_toggle.Name = "padding_button_toggle"
+                        padding_button_toggle.Parent = button_toggle
+                        padding_button_toggle.PaddingLeft = UDim.new(0, 8)
 
-                        local selectedText = makeText(topButton, {
-                            GuiSize = UDim2.new(1, -42, 1, 0),
-                            Position = UDim2.new(0, 11, 0, 0),
-                            Text = tostring(default),
-                            Font = Enum.Font.Gotham,
-                            Size = 13,
-                            Color = THEME.Text,
-                            X = Enum.TextXAlignment.Left,
-                            ZIndex = 13
-                        })
-
-                        local arrow = makeText(topButton, {
-                            GuiSize = UDim2.new(0, 28, 1, 0),
-                            Position = UDim2.new(1, -32, 0, 0),
-                            Text = "⌄",
-                            Font = Enum.Font.Gotham,
-                            Size = 18,
-                            Color = THEME.Muted,
-                            X = Enum.TextXAlignment.Center,
-                            ZIndex = 13
-                        })
-
-                        local menu = create("Frame", {
-                            Parent = box,
-                            Position = UDim2.new(0, 0, 0, 31),
-                            Size = UDim2.new(1, 0, 0, 0),
-                            BackgroundTransparency = 1,
-                            BorderSizePixel = 0,
-                            ClipsDescendants = true,
-                            ZIndex = 12
-                        })
-
-                        local menuList = listLayout(menu, Enum.FillDirection.Vertical, 4)
-                        padding(menu, 6, 6, 4, 6)
-
-                        local optionButtons = {}
-                        local open = false
-
-                        local function recalc()
-                            local menuHeight = menuList.AbsoluteContentSize.Y + 10
-                            if open then
-                                holder.Size = UDim2.new(1, 0, 0, 56 + menuHeight)
-                                tween(box, EASE_MED, {Size = UDim2.new(1, 0, 0, 31 + menuHeight)})
-                                tween(menu, EASE_MED, {Size = UDim2.new(1, 0, 0, menuHeight)})
-                            else
-                                holder.Size = UDim2.new(1, 0, 0, 56)
-                                tween(box, EASE_MED, {Size = UDim2.new(1, 0, 0, 30)})
-                                tween(menu, EASE_MED, {Size = UDim2.new(1, 0, 0, 0)})
-                            end
-                            updateSection()
-                        end
-
-                        local function setOpen(state)
-                            open = state
-                            tween(arrow, EASE_FAST, {Rotation = open and 180 or 0})
-                            recalc()
-                        end
-
-                        local function addOption(option)
-                            option = tostring(option)
-
-                            local opt = create("TextButton", {
-                                Parent = menu,
-                                BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-                                BackgroundTransparency = 0.15,
-                                BorderSizePixel = 0,
-                                AutoButtonColor = false,
-                                Text = "",
-                                Size = UDim2.new(1, 0, 0, 24),
-                                ZIndex = 13
-                            })
-
-                            corner(opt, 6)
-                            stroke(opt, THEME.StrokeSoft, 0.45, 1)
-
-                            local optText = makeText(opt, {
-                                GuiSize = UDim2.new(1, -14, 1, 0),
-                                Position = UDim2.new(0, 7, 0, 0),
-                                Text = option,
-                                Font = Enum.Font.Gotham,
-                                Size = 12,
-                                Color = THEME.Muted,
-                                X = Enum.TextXAlignment.Left,
-                                ZIndex = 14
-                            })
-
-                            opt.MouseEnter:Connect(function()
-                                tween(opt, EASE_FAST, {BackgroundTransparency = 0})
-                                tween(optText, EASE_FAST, {TextColor3 = THEME.TextBright})
-                            end)
-
-                            opt.MouseLeave:Connect(function()
-                                tween(opt, EASE_FAST, {BackgroundTransparency = 0.15})
-                                tween(optText, EASE_FAST, {TextColor3 = THEME.Muted})
-                            end)
-
-                            opt.MouseButton1Click:Connect(function()
-                                selectedText.Text = option
-                                setOpen(false)
-                                pcall(callback, option)
-                            end)
-
-                            optionButtons[option] = opt
-                            recalc()
-                        end
-
-                        for _, option in pairs(options) do
-                            addOption(option)
-                        end
-
-                        topButton.MouseButton1Click:Connect(function()
-                            setOpen(not open)
-                        end)
-
-                        connectHover(box, THEME.StrokeSoft, THEME.Purple)
                         updateSection()
+                        updateSize()
+
+                        local ToggleEnabled = false
+                        button_toggle.MouseButton1Click:Connect(
+                            function()
+                                ToggleEnabled = not ToggleEnabled
+                                local ToggleGradient =
+                                    ToggleEnabled and
+                                    ColorSequence.new {
+                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(125, 95, 210)),
+                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(70, 53, 115))
+                                    } or
+                                    ColorSequence.new {
+                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
+                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                    }
+                                gradient_design_button_toggle_2.Color = ToggleGradient
+
+                                while ToggleEnabled and wait(Configuration_Toggle.Latency) do
+                                    Configuration_Toggle.Script()
+                                end
+                            end
+                        )
+
+                        button_toggle.MouseEnter:Connect(
+                            function()
+                                gradient_design_button_toggle.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(125, 95, 210)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
+                                }
+                            end
+                        )
+                        button_toggle.MouseLeave:Connect(
+                            function()
+                                gradient_design_button_toggle.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                }
+                            end
+                        )
+
+                        local ToggleTools = {}
+                        function SetLocalToggleText(new)
+                            button_toggle.Text = new
+                        end
+                        function ToggleTools.SetText(new)
+                            button_toggle.Text = new
+                        end
+                        return ToggleTools
+                    end
+                    function SectionTools:CreateDropdown(Configuration_Dropdown)
+                        Configuration_Dropdown = {
+                            Text = Configuration_Dropdown.Text or "dropdown",
+                            Default = Configuration_Dropdown.Default or ". . .",
+                            Options = Configuration_Dropdown.Options or {},
+                            Script = Configuration_Dropdown.Script or function()
+                                    print("dropdown")
+                                end
+                        }
+
+                        local holder_dropdown = Instance.new("Frame")
+                        local layout_holder_dropdown = Instance.new("UIListLayout")
+                        local label_dropdown = Instance.new("TextLabel")
+                        local design_dropdown = Instance.new("Frame")
+                        local layout_design_dropdown = Instance.new("UIListLayout")
+                        local button_dropdown = Instance.new("TextButton")
+                        local layout_button_dropdown = Instance.new("UIListLayout")
+                        local button_dropdown_text = Instance.new("TextLabel")
+                        local gradient_button_dropdown = Instance.new("UIGradient")
+                        local button_dropdown_arrow = Instance.new("ImageLabel")
+                        local gradient_button_dropdown_arrow = Instance.new("UIGradient")
+                        local gradient_design_dropdown = Instance.new("UIGradient")
+                        local padding_design_dropdown = Instance.new("UIPadding")
+                        local dropdown_container = Instance.new("Frame")
+                        local layout_dropdown_container = Instance.new("UIListLayout")
+
+                        holder_dropdown.Name = "holder_dropdown"
+                        holder_dropdown.Parent = section
+                        holder_dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        holder_dropdown.BackgroundTransparency = 1.000
+                        holder_dropdown.Position = UDim2.new(0.0317796618, 0, 0.0733137801, 0)
+                        holder_dropdown.Size = UDim2.new(0, 221, 0, 34)
+                        holder_dropdown.ZIndex = 3
+
+                        layout_holder_dropdown.Name = "layout_holder_dropdown"
+                        layout_holder_dropdown.Parent = holder_dropdown
+                        layout_holder_dropdown.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_holder_dropdown.Padding = UDim.new(0, 2)
+
+                        label_dropdown.Name = "label_dropdown"
+                        label_dropdown.Parent = holder_dropdown
+                        label_dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        label_dropdown.BackgroundTransparency = 1.000
+                        label_dropdown.Position = UDim2.new(0, 0, 0.615384638, 0)
+                        label_dropdown.Size = UDim2.new(0, 223, 0, 14)
+                        label_dropdown.Font = Enum.Font.Gotham
+                        label_dropdown.Text = Configuration_Dropdown.Text
+                        label_dropdown.TextColor3 = Color3.fromRGB(225, 225, 225)
+                        label_dropdown.TextSize = 13.000
+                        label_dropdown.TextStrokeColor3 = Color3.fromRGB(15, 15, 15)
+                        label_dropdown.TextStrokeTransparency = 0.300
+                        label_dropdown.TextXAlignment = Enum.TextXAlignment.Left
+
+                        design_dropdown.Name = "design_dropdown"
+                        design_dropdown.Parent = holder_dropdown
+                        design_dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_dropdown.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_dropdown.ClipsDescendants = true
+                        design_dropdown.Position = UDim2.new(0.0317796618, 0, 0.0733137801, 0)
+                        design_dropdown.Size = UDim2.new(0, 221, 0, 16)
+
+                        layout_design_dropdown.Name = "layout_design_dropdown"
+                        layout_design_dropdown.Parent = design_dropdown
+                        layout_design_dropdown.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_design_dropdown.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_dropdown.Padding = UDim.new(0, 1)
+
+                        button_dropdown.Name = "button_dropdown"
+                        button_dropdown.Parent = design_dropdown
+                        button_dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        button_dropdown.BorderSizePixel = 0
+                        button_dropdown.Size = UDim2.new(0, 219, 0, 14)
+                        button_dropdown.AutoButtonColor = false
+                        button_dropdown.Font = Enum.Font.Gotham
+                        button_dropdown.LineHeight = 1.100
+                        button_dropdown.Text = ""
+                        button_dropdown.TextColor3 = Color3.fromRGB(225, 225, 225)
+                        button_dropdown.TextSize = 14.000
+
+                        layout_button_dropdown.Name = "layout_button_dropdown"
+                        layout_button_dropdown.Parent = button_dropdown
+                        layout_button_dropdown.FillDirection = Enum.FillDirection.Horizontal
+                        layout_button_dropdown.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_button_dropdown.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        button_dropdown_text.Name = "button_dropdown_text"
+                        button_dropdown_text.Parent = button_dropdown
+                        button_dropdown_text.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        button_dropdown_text.BackgroundTransparency = 1.000
+                        button_dropdown_text.Size = UDim2.new(0, 202, 0, 14)
+                        button_dropdown_text.Font = Enum.Font.Gotham
+                        button_dropdown_text.LineHeight = 1.200
+                        button_dropdown_text.Text = "  " .. Configuration_Dropdown.Default
+                        button_dropdown_text.TextColor3 = Color3.fromRGB(220, 220, 220)
+                        button_dropdown_text.TextSize = 12.000
+                        button_dropdown_text.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
+                        button_dropdown_text.TextStrokeTransparency = 0.300
+                        button_dropdown_text.TextXAlignment = Enum.TextXAlignment.Left
+
+                        gradient_button_dropdown.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                        }
+                        gradient_button_dropdown.Rotation = 90
+                        gradient_button_dropdown.Name = "gradient_button_dropdown"
+                        gradient_button_dropdown.Parent = button_dropdown
+
+                        button_dropdown_arrow.Name = "button_dropdown_arrow"
+                        button_dropdown_arrow.Parent = button_dropdown
+                        button_dropdown_arrow.Active = false
+                        button_dropdown_arrow.BackgroundTransparency = 1.000
+                        button_dropdown_arrow.LayoutOrder = 6
+                        button_dropdown_arrow.Position = UDim2.new(0.844748855, 0, -0.392857134, 0)
+                        button_dropdown_arrow.Size = UDim2.new(0, 14, 0, 14)
+                        button_dropdown_arrow.ZIndex = 1
+                        button_dropdown_arrow.Image = "rbxassetid://3926307971"
+                        button_dropdown_arrow.ImageRectOffset = Vector2.new(324, 524)
+                        button_dropdown_arrow.ImageRectSize = Vector2.new(36, 36)
+                        button_dropdown_arrow.ScaleType = Enum.ScaleType.Fit
+
+                        gradient_button_dropdown_arrow.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(167, 167, 167)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(127, 127, 127))
+                        }
+                        gradient_button_dropdown_arrow.Rotation = 90
+                        gradient_button_dropdown_arrow.Name = "gradient_button_dropdown_arrow"
+                        gradient_button_dropdown_arrow.Parent = button_dropdown_arrow
+
+                        gradient_design_dropdown.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                        }
+                        gradient_design_dropdown.Rotation = 90
+                        gradient_design_dropdown.Name = "gradient_design_dropdown"
+                        gradient_design_dropdown.Parent = design_dropdown
+
+                        padding_design_dropdown.Name = "padding_design_dropdown"
+                        padding_design_dropdown.Parent = design_dropdown
+                        padding_design_dropdown.PaddingTop = UDim.new(0, 1)
+
+                        dropdown_container.Name = "dropdown_container"
+                        dropdown_container.Parent = design_dropdown
+                        dropdown_container.BackgroundColor3 = Color3.fromRGB(29, 29, 29)
+                        dropdown_container.BackgroundTransparency = 0
+                        dropdown_container.BorderSizePixel = 0
+                        dropdown_container.Position = UDim2.new(0.00452488707, 0, 1, 0)
+                        dropdown_container.Size = UDim2.new(0, 219, 0, 0)
+                        dropdown_container.ZIndex = 4
+
+                        layout_dropdown_container.Name = "layout_dropdown_container"
+                        layout_dropdown_container.Parent = dropdown_container
+                        layout_dropdown_container.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_dropdown_container.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_dropdown_container.Padding = UDim.new(0, 2)
+
+                        local function updateDropdown()
+                            local csD = layout_dropdown_container.AbsoluteContentSize.Y
+                            dropdown_container.Size = UDim2.new(0, 219, 0, csD + 3)
+                        end
+
+                        local dropdownIsOpen = false
+                        button_dropdown.MouseButton1Click:Connect(
+                            function()
+                                dropdownIsOpen = not dropdownIsOpen
+                                updateDropdown()
+                                local openHeight = math.clamp(dropdown_container.Size.Y.Offset + 17, 16, 148)
+                                local designSize = dropdownIsOpen and UDim2.new(0, 221, 0, openHeight) or UDim2.new(0, 221, 0, 16)
+                                HH_Tween(design_dropdown, 0.18, {Size = designSize}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                                task.delay(0.19, function()
+                                    updateSection()
+                                    updateSize()
+                                end)
+                            end
+                        )
+
+                        button_dropdown.MouseEnter:Connect(
+                            function()
+                                gradient_button_dropdown.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(125, 95, 210)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
+                                }
+                            end
+                        )
+                        button_dropdown.MouseLeave:Connect(
+                            function()
+                                gradient_button_dropdown.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                }
+                            end
+                        )
+
+                        for i, v in next, Configuration_Dropdown.Options do
+                            local button_dropdown_option = Instance.new("TextButton")
+                            local layout_button_dropdown_option = Instance.new("UIListLayout")
+                            local button_dropdown_text_2 = Instance.new("TextLabel")
+                            local gradient_button_dropdown_option = Instance.new("UIGradient")
+
+                            button_dropdown_option.Name = "button_dropdown_option"
+                            button_dropdown_option.Parent = dropdown_container
+                            button_dropdown_option.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                            button_dropdown_option.BorderSizePixel = 0
+                            button_dropdown_option.Size = UDim2.new(0, 219, 0, 12)
+                            button_dropdown_option.AutoButtonColor = false
+                            button_dropdown_option.Font = Enum.Font.Gotham
+                            button_dropdown_option.LineHeight = 1.100
+                            button_dropdown_option.Text = ""
+                            button_dropdown_option.TextColor3 = Color3.fromRGB(200, 200, 200)
+                            button_dropdown_option.TextSize = 14.000
+                            button_dropdown_option.ZIndex = 5
+
+                            layout_button_dropdown_option.Name = "layout_button_dropdown_option"
+                            layout_button_dropdown_option.Parent = button_dropdown_option
+                            layout_button_dropdown_option.FillDirection = Enum.FillDirection.Horizontal
+                            layout_button_dropdown_option.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                            layout_button_dropdown_option.SortOrder = Enum.SortOrder.LayoutOrder
+                            layout_button_dropdown_option.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                            button_dropdown_text_2.Name = "button_dropdown_text"
+                            button_dropdown_text_2.Parent = button_dropdown_option
+                            button_dropdown_text_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                            button_dropdown_text_2.BackgroundTransparency = 1.000
+                            button_dropdown_text_2.Position = UDim2.new(0.00688073412, 0, -0.0833333358, 0)
+                            button_dropdown_text_2.Size = UDim2.new(0, 217, 0, 14)
+                            button_dropdown_text_2.Font = Enum.Font.Gotham
+                            button_dropdown_text_2.LineHeight = 1.170
+                            button_dropdown_text_2.Text = v
+                            button_dropdown_text_2.TextColor3 = Color3.fromRGB(200, 200, 200)
+                            button_dropdown_text_2.TextSize = 13.000
+                            button_dropdown_text_2.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
+                            button_dropdown_text_2.TextStrokeTransparency = 0.300
+                            button_dropdown_text_2.ZIndex = 6
+
+                            gradient_button_dropdown_option.Color =
+                                ColorSequence.new {
+                                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(25, 25, 25)),
+                                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(21, 21, 21))
+                            }
+                            gradient_button_dropdown_option.Rotation = 90
+                            gradient_button_dropdown_option.Name = "gradient_button_dropdown_option"
+                            gradient_button_dropdown_option.Parent = button_dropdown_option
+
+                            button_dropdown_option.MouseButton1Click:Connect(
+                                function()
+                                    if dropdownIsOpen then
+                                        for z, x in next, dropdown_container:GetChildren() do
+                                            if x:IsA("TextButton") then
+                                                for b, n in next, x:GetChildren() do
+                                                    if n:IsA("TextLabel") then
+                                                        n.TextColor3 = Color3.fromRGB(200, 200, 200)
+                                                    end
+                                                end
+                                            end
+                                        end
+                                        button_dropdown_text_2.TextColor3 = Color3.fromRGB(125, 95, 210)
+                                        button_dropdown_text.Text = "  " .. button_dropdown_text_2.Text
+                                        design_dropdown.Size = UDim2.new(0, 221, 0, 16)
+                                        dropdownIsOpen = false
+                                        Configuration_Dropdown.Script(button_dropdown_text_2.Text)
+                                        updateDropdown()
+                                        updateSection()
+                                        updateSize()
+                                    end
+                                end
+                            )
+                        end
+
+                        updateDropdown()
+                        updateSection()
+                        updateSize()
 
                         local DropdownTools = {}
-
-                        function DropdownTools.SetText(newText)
-                            label.Text = tostring(newText)
+                        function SetLocalDropdownText(new)
+                            label_dropdown.Text = new
                         end
-
-                        function DropdownTools.SetValue(newValue)
-                            selectedText.Text = tostring(newValue)
-                            pcall(callback, tostring(newValue))
+                        function DropdownTools.SetText(new)
+                            label_dropdown.Text = new
                         end
+                        function AddLocalDropdownOption(option)
+                            local button_dropdown_option = Instance.new("TextButton")
+                            local layout_button_dropdown_option = Instance.new("UIListLayout")
+                            local button_dropdown_text_2 = Instance.new("TextLabel")
+                            local gradient_button_dropdown_option = Instance.new("UIGradient")
 
-                        function DropdownTools.AddOption(option)
-                            addOption(option)
-                        end
+                            button_dropdown_option.Name = "button_dropdown_option"
+                            button_dropdown_option.Parent = dropdown_container
+                            button_dropdown_option.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                            button_dropdown_option.BorderSizePixel = 0
+                            button_dropdown_option.Size = UDim2.new(0, 219, 0, 12)
+                            button_dropdown_option.AutoButtonColor = false
+                            button_dropdown_option.Font = Enum.Font.Gotham
+                            button_dropdown_option.LineHeight = 1.100
+                            button_dropdown_option.Text = ""
+                            button_dropdown_option.TextColor3 = Color3.fromRGB(200, 200, 200)
+                            button_dropdown_option.TextSize = 14.000
+                            button_dropdown_option.ZIndex = 5
 
-                        function DropdownTools.RemoveOption(option)
-                            option = tostring(option)
-                            if optionButtons[option] then
-                                optionButtons[option]:Destroy()
-                                optionButtons[option] = nil
-                                recalc()
-                            end
-                        end
+                            layout_button_dropdown_option.Name = "layout_button_dropdown_option"
+                            layout_button_dropdown_option.Parent = button_dropdown_option
+                            layout_button_dropdown_option.FillDirection = Enum.FillDirection.Horizontal
+                            layout_button_dropdown_option.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                            layout_button_dropdown_option.SortOrder = Enum.SortOrder.LayoutOrder
+                            layout_button_dropdown_option.VerticalAlignment = Enum.VerticalAlignment.Center
 
-                        function DropdownTools.Clear()
-                            for _, opt in pairs(optionButtons) do
-                                opt:Destroy()
-                            end
-                            table.clear(optionButtons)
-                            recalc()
-                        end
+                            button_dropdown_text_2.Name = "button_dropdown_text"
+                            button_dropdown_text_2.Parent = button_dropdown_option
+                            button_dropdown_text_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                            button_dropdown_text_2.BackgroundTransparency = 1.000
+                            button_dropdown_text_2.Position = UDim2.new(0.00688073412, 0, -0.0833333358, 0)
+                            button_dropdown_text_2.Size = UDim2.new(0, 217, 0, 14)
+                            button_dropdown_text_2.Font = Enum.Font.Gotham
+                            button_dropdown_text_2.LineHeight = 1.170
+                            button_dropdown_text_2.Text = option
+                            button_dropdown_text_2.TextColor3 = Color3.fromRGB(200, 200, 200)
+                            button_dropdown_text_2.TextSize = 13.000
+                            button_dropdown_text_2.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
+                            button_dropdown_text_2.TextStrokeTransparency = 0.300
+                            button_dropdown_text_2.ZIndex = 6
 
-                        function DropdownTools.Destroy()
-                            holder:Destroy()
+                            gradient_button_dropdown_option.Color =
+                                ColorSequence.new {
+                                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(25, 25, 25)),
+                                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(21, 21, 21))
+                            }
+                            gradient_button_dropdown_option.Rotation = 90
+                            gradient_button_dropdown_option.Name = "gradient_button_dropdown_option"
+                            gradient_button_dropdown_option.Parent = button_dropdown_option
+
+                            button_dropdown_option.MouseButton1Click:Connect(
+                                function()
+                                    if dropdownIsOpen then
+                                        for z, x in next, dropdown_container:GetChildren() do
+                                            if x:IsA("TextButton") then
+                                                for b, n in next, x:GetChildren() do
+                                                    if n:IsA("TextLabel") then
+                                                        n.TextColor3 = Color3.fromRGB(200, 200, 200)
+                                                    end
+                                                end
+                                            end
+                                        end
+                                        button_dropdown_text_2.TextColor3 = Color3.fromRGB(125, 95, 210)
+                                        button_dropdown_text.Text = "  " .. button_dropdown_text_2.Text
+                                        design_dropdown.Size = UDim2.new(0, 221, 0, 16)
+                                        dropdownIsOpen = false
+                                        Configuration_Dropdown.Script(button_dropdown_text_2.Text)
+                                        updateDropdown()
+                                        updateSection()
+                                        updateSize()
+                                    end
+                                end
+                            )
+                            updateDropdown()
                             updateSection()
+                            updateSize()
+                            Configuration_Dropdown.Options[option] = option
                         end
+                        function DropdownTools.AddOption(option)
+                            local button_dropdown_option = Instance.new("TextButton")
+                            local layout_button_dropdown_option = Instance.new("UIListLayout")
+                            local button_dropdown_text_2 = Instance.new("TextLabel")
+                            local gradient_button_dropdown_option = Instance.new("UIGradient")
 
+                            button_dropdown_option.Name = "button_dropdown_option"
+                            button_dropdown_option.Parent = dropdown_container
+                            button_dropdown_option.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                            button_dropdown_option.BorderSizePixel = 0
+                            button_dropdown_option.Size = UDim2.new(0, 219, 0, 12)
+                            button_dropdown_option.AutoButtonColor = false
+                            button_dropdown_option.Font = Enum.Font.Gotham
+                            button_dropdown_option.LineHeight = 1.100
+                            button_dropdown_option.Text = ""
+                            button_dropdown_option.TextColor3 = Color3.fromRGB(200, 200, 200)
+                            button_dropdown_option.TextSize = 14.000
+                            button_dropdown_option.ZIndex = 5
+
+                            layout_button_dropdown_option.Name = "layout_button_dropdown_option"
+                            layout_button_dropdown_option.Parent = button_dropdown_option
+                            layout_button_dropdown_option.FillDirection = Enum.FillDirection.Horizontal
+                            layout_button_dropdown_option.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                            layout_button_dropdown_option.SortOrder = Enum.SortOrder.LayoutOrder
+                            layout_button_dropdown_option.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                            button_dropdown_text_2.Name = "button_dropdown_text"
+                            button_dropdown_text_2.Parent = button_dropdown_option
+                            button_dropdown_text_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                            button_dropdown_text_2.BackgroundTransparency = 1.000
+                            button_dropdown_text_2.Position = UDim2.new(0.00688073412, 0, -0.0833333358, 0)
+                            button_dropdown_text_2.Size = UDim2.new(0, 217, 0, 14)
+                            button_dropdown_text_2.Font = Enum.Font.Gotham
+                            button_dropdown_text_2.LineHeight = 1.170
+                            button_dropdown_text_2.Text = option
+                            button_dropdown_text_2.TextColor3 = Color3.fromRGB(200, 200, 200)
+                            button_dropdown_text_2.TextSize = 13.000
+                            button_dropdown_text_2.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
+                            button_dropdown_text_2.TextStrokeTransparency = 0.300
+                            button_dropdown_text_2.ZIndex = 6
+
+                            gradient_button_dropdown_option.Color =
+                                ColorSequence.new {
+                                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(25, 25, 25)),
+                                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(21, 21, 21))
+                            }
+                            gradient_button_dropdown_option.Rotation = 90
+                            gradient_button_dropdown_option.Name = "gradient_button_dropdown_option"
+                            gradient_button_dropdown_option.Parent = button_dropdown_option
+
+                            button_dropdown_option.MouseButton1Click:Connect(
+                                function()
+                                    if dropdownIsOpen then
+                                        for z, x in next, dropdown_container:GetChildren() do
+                                            if x:IsA("TextButton") then
+                                                for b, n in next, x:GetChildren() do
+                                                    if n:IsA("TextLabel") then
+                                                        n.TextColor3 = Color3.fromRGB(200, 200, 200)
+                                                    end
+                                                end
+                                            end
+                                        end
+                                        button_dropdown_text_2.TextColor3 = Color3.fromRGB(125, 95, 210)
+                                        button_dropdown_text.Text = "  " .. button_dropdown_text_2.Text
+                                        design_dropdown.Size = UDim2.new(0, 221, 0, 16)
+                                        dropdownIsOpen = false
+                                        Configuration_Dropdown.Script(button_dropdown_text_2.Text)
+                                        updateDropdown()
+                                        updateSection()
+                                        updateSize()
+                                    end
+                                end
+                            )
+                            updateDropdown()
+                            updateSection()
+                            updateSize()
+                            Configuration_Dropdown.Options[option] = option
+                        end
+                        function RemoveLocalDropdownOption(option)
+                            for i, v in next, dropdown_container:GetChildren() do
+                                if v:IsA("TextButton") then
+                                    for z, x in next, v:GetChildren() do
+                                        if x:IsA("TextLabel") and x.Text == option then
+                                            v:Destroy()
+                                            Configuration_Dropdown.Options[option] = nil
+                                        end
+                                    end
+                                end
+                            end
+                            updateDropdown()
+                            updateSection()
+                            updateSize()
+                        end
+                        function DropdownTools.RemoveOption(option)
+                            for i, v in next, dropdown_container:GetChildren() do
+                                if v:IsA("TextButton") then
+                                    for z, x in next, v:GetChildren() do
+                                        if x:IsA("TextLabel") and x.Text == option then
+                                            v:Destroy()
+                                            Configuration_Dropdown.Options[option] = nil
+                                        end
+                                    end
+                                end
+                            end
+                            updateDropdown()
+                            updateSection()
+                            updateSize()
+                        end
                         return DropdownTools
                     end
-
                     function SectionTools:CreateSlider(Configuration_Slider)
-                        Configuration_Slider = Configuration_Slider or {}
-                        Configuration_Slider.Values = Configuration_Slider.Values or {}
+                        Configuration_Slider = {
+                            Text = Configuration_Slider.Text or "slider",
+                            Suffix = Configuration_Slider.Suffix or "",
+                            Values = {
+                                Minimum = Configuration_Slider.Values.Minimum or 0,
+                                Maximum = Configuration_Slider.Values.Maximum or 100,
+                                Default = Configuration_Slider.Values.Default or 0
+                            },
+                            Script = Configuration_Slider.Script or function()
+                                end
+                        }
 
-                        local text = Configuration_Slider.Text or "slider"
-                        local suffix = Configuration_Slider.Suffix or ""
-                        local min = tonumber(Configuration_Slider.Values.Minimum) or 0
-                        local max = tonumber(Configuration_Slider.Values.Maximum) or 100
-                        local default = tonumber(Configuration_Slider.Values.Default) or min
-                        local callback = Configuration_Slider.Script or function() end
+                        local holder_slider = Instance.new("Frame")
+                        local layout_holder_slider = Instance.new("UIListLayout")
+                        local label_holder_slider = Instance.new("TextLabel")
+                        local design_slider = Instance.new("Frame")
+                        local layout_design_slider = Instance.new("UIListLayout")
+                        local gradient_design_slider = Instance.new("UIGradient")
+                        local button_slider = Instance.new("TextButton")
+                        local gradient_button_slider = Instance.new("UIGradient")
+                        local design_2_slider = Instance.new("Frame")
+                        local gradient_design_2_slider = Instance.new("UIGradient")
+                        local padding_design_2_slider = Instance.new("UIPadding")
+                        local layout_button_slider = Instance.new("UIListLayout")
+                        local padding_button_slider = Instance.new("UIPadding")
+                        local antiLayoutSliderFolder = Instance.new("Folder")
+                        local button_slider_value = Instance.new("TextLabel")
+                        local antiLayoutSliderFolder_2 = Instance.new("Folder")
+                        local invisible_slider_cut = Instance.new("Frame")
+                        local gradient_invisible_slider_cut = Instance.new("UIGradient")
+                        local layout_antiLayoutSliderFolder = Instance.new("UIListLayout")
+                        local padding_antiLayoutSliderFolder = Instance.new("UIPadding")
 
-                        if max <= min then
-                            max = min + 1
-                        end
+                        holder_slider.Name = "holder_slider"
+                        holder_slider.Parent = section
+                        holder_slider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        holder_slider.BackgroundTransparency = 1.000
+                        holder_slider.Position = UDim2.new(0.0317796618, 0, 0.208333328, 0)
+                        holder_slider.Size = UDim2.new(0, 221, 0, 32)
 
-                        local holder = create("Frame", {
-                            Parent = section,
-                            BackgroundTransparency = 1,
-                            Size = UDim2.new(1, 0, 0, 52),
-                            LayoutOrder = 10
-                        })
+                        layout_holder_slider.Name = "layout_holder_slider"
+                        layout_holder_slider.Parent = holder_slider
+                        layout_holder_slider.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_holder_slider.Padding = UDim.new(0, 2)
 
-                        local label = makeText(holder, {
-                            GuiSize = UDim2.new(1, -64, 0, 18),
-                            Text = text,
-                            Font = Enum.Font.Gotham,
-                            Size = 13,
-                            Color = THEME.Text,
-                            X = Enum.TextXAlignment.Left
-                        })
+                        label_holder_slider.Name = "label_holder_slider"
+                        label_holder_slider.Parent = holder_slider
+                        label_holder_slider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        label_holder_slider.BackgroundTransparency = 1.000
+                        label_holder_slider.Position = UDim2.new(0, 0, 0.615384638, 0)
+                        label_holder_slider.Size = UDim2.new(0, 223, 0, 14)
+                        label_holder_slider.Font = Enum.Font.Gotham
+                        label_holder_slider.Text = Configuration_Slider.Text
+                        label_holder_slider.TextColor3 = Color3.fromRGB(225, 225, 225)
+                        label_holder_slider.TextSize = 13.000
+                        label_holder_slider.TextStrokeColor3 = Color3.fromRGB(15, 15, 15)
+                        label_holder_slider.TextStrokeTransparency = 0.300
+                        label_holder_slider.TextXAlignment = Enum.TextXAlignment.Left
 
-                        local valueLabel = makeText(holder, {
-                            GuiSize = UDim2.new(0, 64, 0, 18),
-                            Position = UDim2.new(1, -64, 0, 0),
-                            Text = tostring(default) .. suffix,
-                            Font = Enum.Font.Gotham,
-                            Size = 12,
-                            Color = THEME.Muted,
-                            X = Enum.TextXAlignment.Right
-                        })
+                        design_slider.Name = "design_slider"
+                        design_slider.Parent = holder_slider
+                        design_slider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_slider.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_slider.ClipsDescendants = true
+                        design_slider.Position = UDim2.new(0, 0, 0.533333361, 0)
+                        design_slider.Size = UDim2.new(0, 221, 0, 14)
 
-                        local bar = create("TextButton", {
-                            Parent = holder,
-                            Position = UDim2.new(0, 0, 0, 26),
-                            Size = UDim2.new(1, 0, 0, 18),
-                            BackgroundColor3 = Color3.fromRGB(28, 28, 28),
-                            BorderSizePixel = 0,
-                            AutoButtonColor = false,
-                            Text = "",
-                            ClipsDescendants = true
-                        })
+                        layout_design_slider.Name = "layout_design_slider"
+                        layout_design_slider.Parent = design_slider
+                        layout_design_slider.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_design_slider.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_slider.VerticalAlignment = Enum.VerticalAlignment.Center
+                        layout_design_slider.Padding = UDim.new(0, 1)
 
-                        corner(bar, 8)
-                        stroke(bar, THEME.StrokeSoft, 0.24, 1)
+                        gradient_design_slider.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                        }
+                        gradient_design_slider.Rotation = 90
+                        gradient_design_slider.Name = "gradient_design_slider"
+                        gradient_design_slider.Parent = design_slider
 
-                        local fill = create("Frame", {
-                            Parent = bar,
-                            Size = UDim2.new(0, 0, 1, 0),
-                            BackgroundColor3 = THEME.Purple,
-                            BackgroundTransparency = 0.1,
-                            BorderSizePixel = 0
-                        })
+                        button_slider.Name = "button_slider"
+                        button_slider.Parent = design_slider
+                        button_slider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        button_slider.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        button_slider.Size = UDim2.new(0, 217, 0, 10)
+                        button_slider.AutoButtonColor = false
+                        button_slider.Font = Enum.Font.SourceSans
+                        button_slider.Text = ""
+                        button_slider.TextColor3 = Color3.fromRGB(0, 0, 0)
+                        button_slider.TextSize = 14.000
+                        button_slider.ClipsDescendants = true
 
-                        corner(fill, 8)
+                        gradient_button_slider.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                        }
+                        gradient_button_slider.Rotation = 90
+                        gradient_button_slider.Name = "gradient_button_slider"
+                        gradient_button_slider.Parent = button_slider
 
-                        local current = default
-                        local dragging = false
+                        design_2_slider.Name = "design_2_slider"
+                        design_2_slider.Parent = button_slider
+                        design_2_slider.AnchorPoint = Vector2.new(0.5, 0.5)
+                        design_2_slider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_2_slider.BorderSizePixel = 0
+                        design_2_slider.Position = UDim2.new(0.0311059915, 0, 0.5, 0)
+                        design_2_slider.Size = UDim2.new(0, 0, 0, 8)
 
-                        local function percentFromValue(value)
-                            return math.clamp((value - min) / (max - min), 0, 1)
-                        end
+                        gradient_design_2_slider.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(125, 95, 210)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(55, 42, 91))
+                        }
+                        gradient_design_2_slider.Rotation = 90
+                        gradient_design_2_slider.Name = "gradient_design_2_slider"
+                        gradient_design_2_slider.Parent = design_2_slider
 
-                        local function valueFromX(x)
-                            local pct = math.clamp((x - bar.AbsolutePosition.X) / math.max(bar.AbsoluteSize.X, 1), 0, 1)
-                            return math.floor((min + ((max - min) * pct)) + 0.5)
-                        end
+                        padding_design_2_slider.Name = "padding_design_2_slider"
+                        padding_design_2_slider.Parent = design_2_slider
+                        padding_design_2_slider.PaddingRight = UDim.new(0, 1)
 
-                        local function setValue(value, fire)
-                            current = math.clamp(tonumber(value) or min, min, max)
-                            valueLabel.Text = tostring(current) .. suffix
-                            tween(fill, TweenInfo.new(0.08, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
-                                Size = UDim2.new(percentFromValue(current), 0, 1, 0)
-                            })
-                            if fire then
-                                pcall(callback, current)
+                        layout_button_slider.Name = "layout_button_slider"
+                        layout_button_slider.Parent = button_slider
+                        layout_button_slider.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_button_slider.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        padding_button_slider.Name = "padding_button_slider"
+                        padding_button_slider.Parent = button_slider
+                        padding_button_slider.PaddingLeft = UDim.new(0, 1)
+
+                        antiLayoutSliderFolder.Parent = button_slider
+
+                        button_slider_value.Name = "button_slider_value"
+                        button_slider_value.Parent = antiLayoutSliderFolder
+                        button_slider_value.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        button_slider_value.BackgroundTransparency = 1.000
+                        button_slider_value.Size = UDim2.new(0, 217, 0, 10)
+                        button_slider_value.Font = Enum.Font.Gotham
+                        button_slider_value.LineHeight = 1.400
+                        button_slider_value.Text = "0%"
+                        button_slider_value.TextColor3 = Color3.fromRGB(225, 225, 225)
+                        button_slider_value.TextSize = 12.000
+
+                        antiLayoutSliderFolder_2.Name = "antiLayoutSliderFolder_2"
+                        antiLayoutSliderFolder_2.Parent = button_slider
+
+                        invisible_slider_cut.Name = "invisible_slider_cut"
+                        invisible_slider_cut.Parent = antiLayoutSliderFolder_2
+                        invisible_slider_cut.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        invisible_slider_cut.BorderSizePixel = 0
+                        invisible_slider_cut.Position = UDim2.new(1, 0, 0.100000001, 0)
+                        invisible_slider_cut.Size = UDim2.new(0, 1, 0, 10)
+                        invisible_slider_cut.ZIndex = 4
+
+                        gradient_invisible_slider_cut.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                        }
+                        gradient_invisible_slider_cut.Rotation = 90
+                        gradient_invisible_slider_cut.Name = "gradient_invisible_slider_cut"
+                        gradient_invisible_slider_cut.Parent = invisible_slider_cut
+
+                        layout_antiLayoutSliderFolder.Name = "layout_antiLayoutSliderFolder"
+                        layout_antiLayoutSliderFolder.Parent = antiLayoutSliderFolder_2
+                        layout_antiLayoutSliderFolder.HorizontalAlignment = Enum.HorizontalAlignment.Right
+                        layout_antiLayoutSliderFolder.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_antiLayoutSliderFolder.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        padding_antiLayoutSliderFolder.Name = "padding_antiLayoutSliderFolder"
+                        padding_antiLayoutSliderFolder.Parent = antiLayoutSliderFolder_2
+                        padding_antiLayoutSliderFolder.PaddingRight = UDim.new(0, 2)
+
+                        design_slider.MouseEnter:Connect(
+                            function()
+                                gradient_design_slider.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(125, 95, 210)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
+                                }
                             end
-                        end
-
-                        local function updateFromInput(input)
-                            setValue(valueFromX(input.Position.X), true)
-                        end
-
-                        bar.MouseButton1Down:Connect(function()
-                            dragging = true
-                            setValue(valueFromX(Mouse.X), true)
-                        end)
-
-                        UserInputService.InputChanged:Connect(function(input)
-                            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                                updateFromInput(input)
+                        )
+                        design_slider.MouseLeave:Connect(
+                            function()
+                                gradient_design_slider.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(33, 33, 33)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 30, 30))
+                                }
                             end
-                        end)
+                        )
 
-                        UserInputService.InputEnded:Connect(function(input)
-                            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                                dragging = false
+                        local partial_1 = Configuration_Slider.Values.Maximum - Configuration_Slider.Values.Minimum
+                        local partial_2 = Configuration_Slider.Values.Default - Configuration_Slider.Values.Minimum
+                        local partial_3 = partial_2 / partial_1
+                        local partial_4 = partial_3 * button_slider.AbsoluteSize.X
+                        design_2_slider.Size = UDim2.new(0, partial_4, 0, 8)
+                        button_slider_value.Text = Configuration_Slider.Values.Default .. Configuration_Slider.Suffix
+
+                        CreateTween(
+                            "slider_drag",
+                            {
+                                Speed = 0.013,
+                                Style = Enum.EasingStyle.Sine,
+                                Direction = Enum.EasingDirection.InOut,
+                                LoopAmount = 0,
+                                Reverse = false,
+                                Delay = 0
+                            }
+                        )
+
+                        local ValueNum = Configuration_Slider.Values.Default
+                        local function updateSlider()
+                            TweenService:Create(
+                                design_2_slider,
+                                TweenTable["slider_drag"],
+                                {
+                                    Size = UDim2.new(
+                                        0,
+                                        math.clamp(
+                                            Mouse.X - design_2_slider.AbsolutePosition.X,
+                                            0,
+                                            button_slider.AbsoluteSize.X
+                                        ),
+                                        0,
+                                        8
+                                    )
+                                }
+                            ):Play()
+                            ValueNum =
+                                math.floor(
+                                (((tonumber(Configuration_Slider.Values.Maximum) -
+                                    tonumber(Configuration_Slider.Values.Minimum)) /
+                                    button_slider.AbsoluteSize.X) *
+                                    design_2_slider.AbsoluteSize.X) +
+                                    tonumber(Configuration_Slider.Values.Minimum)
+                            ) or 0.00
+                            button_slider_value.Text = ValueNum .. Configuration_Slider.Suffix
+                            pcall(
+                                function()
+                                    Configuration_Slider.Script(ValueNum)
+                                end
+                            )
+
+                            button_slider_value.Text = ValueNum .. Configuration_Slider.Suffix
+                            moveconnection =
+                                Mouse.Move:Connect(
+                                function()
+                                    ValueNum =
+                                        math.floor(
+                                        (((tonumber(Configuration_Slider.Values.Maximum) -
+                                            tonumber(Configuration_Slider.Values.Minimum)) /
+                                            button_slider.AbsoluteSize.X) *
+                                            design_2_slider.AbsoluteSize.X) +
+                                            tonumber(Configuration_Slider.Values.Minimum)
+                                    )
+                                    button_slider_value.Text = ValueNum .. Configuration_Slider.Suffix
+                                    pcall(
+                                        function()
+                                            Configuration_Slider.Script(ValueNum)
+                                        end
+                                    )
+                                    TweenService:Create(
+                                        design_2_slider,
+                                        TweenTable["slider_drag"],
+                                        {
+                                            Size = UDim2.new(
+                                                0,
+                                                math.clamp(
+                                                    Mouse.X - design_2_slider.AbsolutePosition.X,
+                                                    0,
+                                                    button_slider.AbsoluteSize.X
+                                                ),
+                                                0,
+                                                8
+                                            )
+                                        }
+                                    ):Play()
+                                end
+                            )
+
+                            releaseconnection =
+                                UserInputService.InputEnded:Connect(
+                                function(Mouse_2)
+                                    if Mouse_2.UserInputType == Enum.UserInputType.MouseButton1 then
+                                        ValueNum =
+                                            math.floor(
+                                            (((tonumber(Configuration_Slider.Values.Maximum) -
+                                                tonumber(Configuration_Slider.Values.Minimum)) /
+                                                button_slider.AbsoluteSize.X) *
+                                                design_2_slider.AbsoluteSize.X) +
+                                                tonumber(Configuration_Slider.Values.Minimum)
+                                        )
+                                        button_slider_value.Text = ValueNum .. Configuration_Slider.Suffix
+                                        pcall(
+                                            function()
+                                                Configuration_Slider.Script(ValueNum)
+                                            end
+                                        )
+                                        TweenService:Create(
+                                            design_2_slider,
+                                            TweenTable["slider_drag"],
+                                            {
+                                                Size = UDim2.new(
+                                                    0,
+                                                    math.clamp(
+                                                        Mouse.X - design_2_slider.AbsolutePosition.X,
+                                                        0,
+                                                        button_slider.AbsoluteSize.X
+                                                    ),
+                                                    0,
+                                                    8
+                                                )
+                                            }
+                                        ):Play()
+                                        moveconnection:Disconnect()
+                                        releaseconnection:Disconnect()
+                                    end
+                                end
+                            )
+                        end
+                        button_slider.MouseButton1Down:Connect(
+                            function()
+                                updateSlider()
                             end
-                        end)
+                        )
 
-                        connectHover(bar, THEME.StrokeSoft, THEME.Purple)
-                        setValue(default, false)
                         updateSection()
-
+                        updateSize()
                         local SliderTools = {}
-
-                        function SliderTools.SetValue(newValue)
-                            setValue(newValue, true)
+                        function SliderTools.SetValue(new)
+                            local newValue = new - Configuration_Slider.Values.Minimum
+                            local newValue_2 = newValue / partial_1
+                            local newValue_3 = newValue_2 * button_slider.AbsoluteSize.X
+                            design_2_slider.Size = UDim2.new(0, newValue_3, 0, 8)
+                            button_slider_value.Text = new .. Configuration_Slider.Suffix
+                            Configuration_Slider.Script()
                         end
-
+                        function SetLocalSliderValue(new)
+                            local newValue = new - Configuration_Slider.Values.Minimum
+                            local newValue_2 = newValue / partial_1
+                            local newValue_3 = newValue_2 * button_slider.AbsoluteSize.X
+                            design_2_slider.Size = UDim2.new(0, newValue_3, 0, 8)
+                            button_slider_value.Text = new .. Configuration_Slider.Suffix
+                            Configuration_Slider.Script()
+                        end
                         function SliderTools.ResetValue()
-                            setValue(default, true)
+                            design_2_slider.Size = UDim2.new(0, 0, 0, 8)
+                            button_slider_value.Text = 0 .. Configuration_Slider.Suffix
+                            Configuration_Slider.Script()
                         end
-
-                        function SliderTools.SetText(newText)
-                            label.Text = tostring(newText)
+                        function ResetLocalSliderValue()
+                            design_2_slider.Size = UDim2.new(0, 0, 0, 8)
+                            button_slider_value.Text = 0 .. Configuration_Slider.Suffix
+                            Configuration_Slider.Script()
                         end
-
-                        function SliderTools.GetValue()
-                            return current
+                        function SliderTools.SetText(new)
+                            label_holder_slider.Text = new
                         end
-
-                        function SliderTools.Destroy()
-                            holder:Destroy()
-                            updateSection()
+                        function SetLocalSliderText(new)
+                            label_holder_slider.Text = new
                         end
-
                         return SliderTools
                     end
-
                     function SectionTools:CreateTextBox(Configuration_TextBox)
-                        Configuration_TextBox = Configuration_TextBox or {}
+                        Configuration_TextBox = {
+                            Text = Configuration_TextBox.Text or "textbox",
+                            PlaceHolder = Configuration_TextBox.PlaceHolder or "",
+                            Pattern = Configuration_TextBox.Pattern or "",
+                            Script = Configuration_TextBox.Script or function()
+                                end
+                        }
 
-                        local text = Configuration_TextBox.Text or "textbox"
-                        local placeholder = Configuration_TextBox.Placeholder or Configuration_TextBox.Default or "type here..."
-                        local callback = Configuration_TextBox.Script or function() end
+                        local design_textbox = Instance.new("Frame")
+                        local layout_design_textbox = Instance.new("UIListLayout")
+                        local label_textbox = Instance.new("TextLabel")
+                        local anti_textbox_layout = Instance.new("Folder")
+                        local design_textbox_2 = Instance.new("Frame")
+                        local gradient_design_textbox = Instance.new("UIGradient")
+                        local layout_design_textbox_2 = Instance.new("UIListLayout")
+                        local design_textbox_2_2 = Instance.new("Frame")
+                        local textbox = Instance.new("TextBox")
+                        local constraint_textbox = Instance.new("UISizeConstraint")
+                        local gradient_design_textbox_2 = Instance.new("UIGradient")
+                        local layout_design_textbox_2_2 = Instance.new("UIListLayout")
+                        local constraint_design_textbox_2 = Instance.new("UISizeConstraint")
+                        local constraint_design_textbox = Instance.new("UISizeConstraint")
+                        local layout_anti_textbox_layout = Instance.new("UIListLayout")
 
-                        local holder = create("Frame", {
-                            Parent = section,
-                            BackgroundTransparency = 1,
-                            Size = UDim2.new(1, 0, 0, 58),
-                            LayoutOrder = 10
-                        })
+                        design_textbox.Name = "design_textbox"
+                        design_textbox.Parent = section
+                        design_textbox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_textbox.BackgroundTransparency = 1.000
+                        design_textbox.Position = UDim2.new(0.0169491526, 0, 0.390625, 0)
+                        design_textbox.Size = UDim2.new(0, 224, 0, 16)
 
-                        local label = makeText(holder, {
-                            GuiSize = UDim2.new(1, 0, 0, 18),
-                            Text = text,
-                            Font = Enum.Font.Gotham,
-                            Size = 13,
-                            Color = THEME.Text,
-                            X = Enum.TextXAlignment.Left
-                        })
+                        layout_design_textbox.Name = "layout_design_textbox"
+                        layout_design_textbox.Parent = design_textbox
+                        layout_design_textbox.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_textbox.VerticalAlignment = Enum.VerticalAlignment.Center
 
-                        local box = create("Frame", {
-                            Parent = holder,
-                            Position = UDim2.new(0, 0, 0, 24),
-                            Size = UDim2.new(1, 0, 0, 30),
-                            BackgroundColor3 = Color3.fromRGB(26, 26, 26),
-                            BorderSizePixel = 0,
-                            ClipsDescendants = true
-                        })
+                        label_textbox.Name = "label_textbox"
+                        label_textbox.Parent = design_textbox
+                        label_textbox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        label_textbox.BackgroundTransparency = 1.000
+                        label_textbox.Size = UDim2.new(0, 232, 0, 16)
+                        label_textbox.Font = Enum.Font.Gotham
+                        label_textbox.Text = " " .. Configuration_TextBox.Text
+                        label_textbox.TextColor3 = Color3.fromRGB(225, 225, 225)
+                        label_textbox.TextSize = 13.000
+                        label_textbox.TextXAlignment = Enum.TextXAlignment.Left
 
-                        corner(box, 7)
-                        stroke(box, THEME.StrokeSoft, 0.18, 1)
+                        anti_textbox_layout.Name = "anti_textbox_layout"
+                        anti_textbox_layout.Parent = design_textbox
 
-                        local input = create("TextBox", {
-                            Parent = box,
-                            BackgroundTransparency = 1,
-                            Size = UDim2.new(1, -18, 1, 0),
-                            Position = UDim2.new(0, 9, 0, 0),
-                            Font = Enum.Font.Gotham,
-                            TextSize = 13,
-                            TextColor3 = THEME.TextBright,
-                            PlaceholderText = placeholder,
-                            PlaceholderColor3 = THEME.Muted2,
-                            Text = "",
-                            ClearTextOnFocus = false,
-                            TextXAlignment = Enum.TextXAlignment.Left
-                        })
+                        design_textbox_2.Name = "design_textbox"
+                        design_textbox_2.Parent = anti_textbox_layout
+                        design_textbox_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_textbox_2.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_textbox_2.Position = UDim2.new(0.912946403, 0, 0.0625, 0)
+                        design_textbox_2.Size = UDim2.new(0, 19, 0, 14)
 
-                        input.Focused:Connect(function()
-                            local s = box:FindFirstChildOfClass("UIStroke")
-                            if s then
-                                tween(s, EASE_FAST, {Color = THEME.Purple, Transparency = 0})
+                        gradient_design_textbox.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                        }
+                        gradient_design_textbox.Rotation = 90
+                        gradient_design_textbox.Name = "gradient_design_textbox"
+                        gradient_design_textbox.Parent = design_textbox_2
+
+                        layout_design_textbox_2.Name = "layout_design_textbox"
+                        layout_design_textbox_2.Parent = design_textbox_2
+                        layout_design_textbox_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_design_textbox_2.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_textbox_2.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        design_textbox_2_2.Name = "design_textbox_2"
+                        design_textbox_2_2.Parent = design_textbox_2
+                        design_textbox_2_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_textbox_2_2.BorderSizePixel = 0
+                        design_textbox_2_2.Position = UDim2.new(2.04166675, 0, 0.0714285746, 0)
+                        design_textbox_2_2.Size = UDim2.new(0, 0, 0, 12)
+
+                        textbox.Name = "textbox"
+                        textbox.Parent = design_textbox_2_2
+                        textbox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        textbox.BackgroundTransparency = 1.000
+                        textbox.BorderSizePixel = 0
+                        textbox.Position = UDim2.new(2, 0, 0, 0)
+                        textbox.Size = UDim2.new(0, 3, 0, 12)
+                        textbox.Font = Enum.Font.Gotham
+                        textbox.LineHeight = 1.250
+                        textbox.PlaceholderColor3 = Color3.fromRGB(130, 130, 130)
+                        textbox.PlaceholderText = Configuration_TextBox.PlaceHolder
+                        textbox.Text = ""
+                        textbox.TextColor3 = Color3.fromRGB(230, 230, 230)
+                        textbox.TextSize = 12.000
+                        textbox.TextStrokeColor3 = Color3.fromRGB(15, 15, 15)
+                        textbox.TextStrokeTransparency = 0.300
+                        textbox.TextTruncate = "AtEnd"
+                        textbox.LineHeight = 1.15
+                        textbox.ClearTextOnFocus = false
+
+                        constraint_textbox.Name = "constraint_textbox"
+                        constraint_textbox.Parent = textbox
+                        constraint_textbox.MaxSize = Vector2.new(222, 12)
+                        constraint_textbox.MinSize = Vector2.new(72, 12)
+
+                        gradient_design_textbox_2.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                        }
+                        gradient_design_textbox_2.Rotation = 90
+                        gradient_design_textbox_2.Name = "gradient_design_textbox_2"
+                        gradient_design_textbox_2.Parent = design_textbox_2_2
+
+                        layout_design_textbox_2_2.Name = "layout_design_textbox_2"
+                        layout_design_textbox_2_2.Parent = design_textbox_2_2
+                        layout_design_textbox_2_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_design_textbox_2_2.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_textbox_2_2.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        constraint_design_textbox_2.Name = "constraint_design_textbox_2"
+                        constraint_design_textbox_2.Parent = design_textbox_2_2
+                        constraint_design_textbox_2.MaxSize = Vector2.new(222, 12)
+                        constraint_design_textbox_2.MinSize = Vector2.new(72, 12)
+
+                        constraint_design_textbox.Name = "constraint_design_textbox"
+                        constraint_design_textbox.Parent = design_textbox_2
+                        constraint_design_textbox.MaxSize = Vector2.new(224, 14)
+                        constraint_design_textbox.MinSize = Vector2.new(74, 12)
+
+                        layout_anti_textbox_layout.Name = "layout_anti_textbox_layout"
+                        layout_anti_textbox_layout.Parent = anti_textbox_layout
+                        layout_anti_textbox_layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+                        layout_anti_textbox_layout.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_anti_textbox_layout.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        -- text checks
+                        textbox:GetPropertyChangedSignal("Text"):Connect(
+                            function()
+                                if Configuration_TextBox.Pattern ~= "" then
+                                    if Configuration_TextBox.Pattern:lower() == "lower" then
+                                        textbox.Text = textbox.Text:lower()
+                                    else
+                                    end
+                                end
                             end
-                        end)
-
-                        input.FocusLost:Connect(function(enterPressed)
-                            local s = box:FindFirstChildOfClass("UIStroke")
-                            if s then
-                                tween(s, EASE_FAST, {Color = THEME.StrokeSoft, Transparency = 0.18})
+                        )
+                        textbox:GetPropertyChangedSignal("Text"):Connect(
+                            function()
+                                if Configuration_TextBox.Pattern ~= "" then
+                                    if Configuration_TextBox.Pattern:lower() == "number" then
+                                        textbox.Text = textbox.Text:gsub("%D+", "")
+                                    else
+                                    end
+                                end
                             end
-                            pcall(callback, input.Text, enterPressed)
-                        end)
+                        )
+                        textbox:GetPropertyChangedSignal("Text"):Connect(
+                            function()
+                                if Configuration_TextBox.Pattern ~= "" then
+                                    if Configuration_TextBox.Pattern:lower() == "upper" then
+                                        textbox.Text = textbox.Text:upper()
+                                    else
+                                    end
+                                end
+                            end
+                        )
+                        -------------
+
+                        CreateTween(
+                            "textbox_autoscale",
+                            {
+                                Speed = 0.013,
+                                Style = Enum.EasingStyle.Sine,
+                                Direction = Enum.EasingDirection.InOut,
+                                LoopAmount = 0,
+                                Reverse = false,
+                                Delay = 0
+                            }
+                        )
+                        textbox.Focused:Connect(
+                            function()
+                                    local newTextboxSize =
+                                        TextService:GetTextSize(
+                                        textbox.Text,
+                                        textbox.TextSize,
+                                        textbox.Font,
+                                        Vector2.new(math.huge, math.huge)
+                                    )
+                                    TweenService:Create(
+                                        design_textbox_2_2,
+                                        TweenTable["textbox_autoscale"],
+                                        {Size = UDim2.new(0, newTextboxSize.X + 2, 0, 12)}
+                                    ):Play()
+                                    TweenService:Create(
+                                        textbox,
+                                        TweenTable["textbox_autoscale"],
+                                        {Size = UDim2.new(0, newTextboxSize.X, 0, 12)}
+                                    ):Play()
+                                    TweenService:Create(
+                                        design_textbox_2,
+                                        TweenTable["textbox_autoscale"],
+                                        {Size = UDim2.new(0, newTextboxSize.X + 4, 0, 14)}
+                                    ):Play()
+                            end
+                        )
+                        textbox:GetPropertyChangedSignal("Text"):Connect(
+                            function()
+                                newTextboxSize =
+                                    TextService:GetTextSize(
+                                    textbox.Text,
+                                    textbox.TextSize,
+                                    textbox.Font,
+                                    Vector2.new(math.huge, math.huge)
+                                )
+                                TweenService:Create(
+                                    design_textbox_2_2,
+                                    TweenTable["textbox_autoscale"],
+                                    {Size = UDim2.new(0, newTextboxSize.X + 2, 0, 12)}
+                                ):Play()
+                                TweenService:Create(
+                                    textbox,
+                                    TweenTable["textbox_autoscale"],
+                                    {Size = UDim2.new(0, newTextboxSize.X, 0, 12)}
+                                ):Play()
+                                TweenService:Create(
+                                    design_textbox_2,
+                                    TweenTable["textbox_autoscale"],
+                                    {Size = UDim2.new(0, newTextboxSize.X + 4, 0, 14)}
+                                ):Play()
+                            end
+                        )
+
+                        textbox.FocusLost:Connect(
+                            function(enterPressed)
+                                if enterPressed then
+                                    Configuration_TextBox.Script(textbox.Text)
+                                end
+                                    TweenService:Create(
+                                        design_textbox_2_2,
+                                        TweenTable["textbox_autoscale"],
+                                        {Size = UDim2.new(0, 72, 0, 12)}
+                                    ):Play()
+                                    TweenService:Create(
+                                        textbox,
+                                        TweenTable["textbox_autoscale"],
+                                        {Size = UDim2.new(0, 72, 0, 12)}
+                                    ):Play()
+                                    TweenService:Create(
+                                        design_textbox_2,
+                                        TweenTable["textbox_autoscale"],
+                                        {Size = UDim2.new(0, 74, 0, 14)}
+                                    ):Play()
+                            end
+                        )
+
+                        design_textbox.MouseEnter:Connect(
+                            function()
+                                gradient_design_textbox.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(125, 95, 210)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
+                                }
+                            end
+                        )
+                        design_textbox.MouseLeave:Connect(
+                            function()
+                                gradient_design_textbox.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                }
+                            end
+                        )
 
                         updateSection()
-
+                        updateSize()
                         local TextBoxTools = {}
-
-                        function TextBoxTools.SetText(newText)
-                            label.Text = tostring(newText)
+                        function TextBoxTools.SetText(new)
+                            label_textbox.Text = " " .. new
                         end
-
-                        function TextBoxTools.SetInput(newText)
-                            input.Text = tostring(newText)
+                        function SetLocalTextBoxText(new)
+                            label_textbox.Text = " " .. new
                         end
-
+                        function TextBoxTools.SetInput(new)
+                            textbox.Text = new
+                        end
+                        function SetLocalTextBoxInput(new)
+                            textbox.Text = new
+                        end
                         function TextBoxTools.ClearInput()
-                            input.Text = ""
+                            textbox.Text = ""
                         end
-
-                        function TextBoxTools.Destroy()
-                            holder:Destroy()
-                            updateSection()
+                        function ClearLocalTextBoxInput()
+                            textbox.Text = ""
                         end
-
                         return TextBoxTools
                     end
-
                     function SectionTools:CreateKeybind(Configuration_Keybind)
-                        Configuration_Keybind = Configuration_Keybind or {}
+                        Configuration_Keybind = {
+                            Text = Configuration_Keybind.Text or "keybind",
+                            Key = Configuration_Keybind.Key or Enum.KeyCode.P,
+                            Script = Configuration_Keybind.Script or function()
+                                end
+                        }
 
-                        local text = Configuration_Keybind.Text or "keybind"
-                        local key = Configuration_Keybind.Key or Enum.KeyCode.P
-                        local callback = Configuration_Keybind.Script or function() end
-                        local listening = false
+                        local design_keybind = Instance.new("Frame")
+                        local layout_design_keybind = Instance.new("UIListLayout")
+                        local label_keybind = Instance.new("TextLabel")
+                        local anti_keybind_layout = Instance.new("Folder")
+                        local design_keybind_2 = Instance.new("Frame")
+                        local gradient_design_keybind_2 = Instance.new("UIGradient")
+                        local layout_design_keybind_2 = Instance.new("UIListLayout")
+                        local design_textbox_3 = Instance.new("Frame")
+                        local gradient_design_textbox_3 = Instance.new("UIGradient")
+                        local layout_design_textbox_3 = Instance.new("UIListLayout")
+                        local button_keybind = Instance.new("TextButton")
+                        local layout_anti_keybind_layout = Instance.new("UIListLayout")
 
-                        local row = create("Frame", {
-                            Parent = section,
-                            BackgroundTransparency = 1,
-                            Size = UDim2.new(1, 0, 0, 32),
-                            LayoutOrder = 10
-                        })
+                        design_keybind.Name = "design_keybind"
+                        design_keybind.Parent = section
+                        design_keybind.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_keybind.BackgroundTransparency = 1.000
+                        design_keybind.Position = UDim2.new(0.0169491526, 0, 0.390625, 0)
+                        design_keybind.Size = UDim2.new(0, 224, 0, 16)
 
-                        local label = makeText(row, {
-                            GuiSize = UDim2.new(1, -88, 1, 0),
-                            Text = text,
-                            Font = Enum.Font.Gotham,
-                            Size = 13,
-                            Color = THEME.Text,
-                            X = Enum.TextXAlignment.Left
-                        })
+                        layout_design_keybind.Name = "layout_design_keybind"
+                        layout_design_keybind.Parent = design_keybind
+                        layout_design_keybind.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_keybind.VerticalAlignment = Enum.VerticalAlignment.Center
 
-                        local keyButton = create("TextButton", {
-                            Parent = row,
-                            AnchorPoint = Vector2.new(1, 0.5),
-                            Position = UDim2.new(1, 0, 0.5, 0),
-                            Size = UDim2.fromOffset(76, 26),
-                            BackgroundColor3 = Color3.fromRGB(26, 26, 26),
-                            BorderSizePixel = 0,
-                            AutoButtonColor = false,
-                            Text = key.Name,
-                            Font = Enum.Font.Gotham,
-                            TextSize = 12,
-                            TextColor3 = THEME.Muted
-                        })
+                        label_keybind.Name = "label_keybind"
+                        label_keybind.Parent = design_keybind
+                        label_keybind.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        label_keybind.BackgroundTransparency = 1.000
+                        label_keybind.Size = UDim2.new(0, 232, 0, 16)
+                        label_keybind.Font = Enum.Font.Gotham
+                        label_keybind.Text = " " .. Configuration_Keybind.Text
+                        label_keybind.TextColor3 = Color3.fromRGB(225, 225, 225)
+                        label_keybind.TextSize = 13.000
+                        label_keybind.TextXAlignment = Enum.TextXAlignment.Left
 
-                        corner(keyButton, 7)
-                        stroke(keyButton, THEME.StrokeSoft, 0.18, 1)
+                        anti_keybind_layout.Name = "anti_keybind_layout"
+                        anti_keybind_layout.Parent = design_keybind
 
-                        keyButton.MouseButton1Click:Connect(function()
-                            listening = true
-                            keyButton.Text = "..."
-                            tween(keyButton, EASE_FAST, {TextColor3 = THEME.Purple})
-                        end)
+                        design_keybind_2.Name = "design_keybind_2"
+                        design_keybind_2.Parent = anti_keybind_layout
+                        design_keybind_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_keybind_2.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_keybind_2.Position = UDim2.new(0.912946403, 0, 0.0625, 0)
+                        design_keybind_2.Size = UDim2.new(0, 26, 0, 14)
 
-                        UserInputService.InputBegan:Connect(function(input, gameProcessed)
-                            if input.UserInputType ~= Enum.UserInputType.Keyboard then
-                                return
+                        gradient_design_keybind_2.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                        }
+                        gradient_design_keybind_2.Rotation = 90
+                        gradient_design_keybind_2.Name = "gradient_design_keybind_2"
+                        gradient_design_keybind_2.Parent = design_keybind_2
+
+                        layout_design_keybind_2.Name = "layout_design_keybind_2"
+                        layout_design_keybind_2.Parent = design_keybind_2
+                        layout_design_keybind_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_design_keybind_2.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_keybind_2.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        design_textbox_3.Name = "design_textbox_3"
+                        design_textbox_3.Parent = design_keybind_2
+                        design_textbox_3.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_textbox_3.BorderSizePixel = 0
+                        design_textbox_3.Position = UDim2.new(2.04166675, 0, 0.0714285746, 0)
+                        design_textbox_3.Size = UDim2.new(0, 24, 0, 12)
+
+                        gradient_design_textbox_3.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                        }
+                        gradient_design_textbox_3.Rotation = 90
+                        gradient_design_textbox_3.Name = "gradient_design_textbox_3"
+                        gradient_design_textbox_3.Parent = design_textbox_3
+
+                        layout_design_textbox_3.Name = "layout_design_textbox_3"
+                        layout_design_textbox_3.Parent = design_textbox_3
+                        layout_design_textbox_3.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_design_textbox_3.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_textbox_3.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        button_keybind.Name = "button_keybind"
+                        button_keybind.Parent = design_textbox_3
+                        button_keybind.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        button_keybind.BackgroundTransparency = 1.000
+                        button_keybind.Size = UDim2.new(0, 24, 0, 12)
+                        button_keybind.Font = Enum.Font.Gotham
+                        button_keybind.LineHeight = 1.100
+                        button_keybind.Text = ". . ."
+                        button_keybind.TextColor3 = Color3.fromRGB(190, 190, 190)
+                        button_keybind.TextSize = 12.000
+
+                        layout_anti_keybind_layout.Name = "layout_anti_keybind_layout"
+                        layout_anti_keybind_layout.Parent = anti_keybind_layout
+                        layout_anti_keybind_layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+                        layout_anti_keybind_layout.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_anti_keybind_layout.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        local shorts = {
+                            RightAlt = "RA",
+                            LeftAlt = "LA",
+                            RightControl = "RC",
+                            LeftControl = "LC",
+                            LeftShift = "LS",
+                            RightShift = "RS",
+                            MouseButton1 = "M1",
+                            MouseButton2 = "M2",
+                            Return = "ENT",
+                            Backspace = "BP",
+                            Tab = "TAB",
+                            CapsLock = "CL",
+                            Escape = "ESC",
+                            Insert = "INS"
+                        }
+                        button_keybind.Text = shorts[Configuration_Keybind.Key.Name] or Configuration_Keybind.Key.Name
+                        
+                        local chosenKeybind = Configuration_Keybind.Key
+                        button_keybind.MouseButton1Click:Connect(
+                            function()
+                                button_keybind.Text = ". . ."
+                                local inputWait = UserInputService.InputBegan:wait()
+                                if inputWait.KeyCode.Name ~= "Unknown" then
+                                    local K = shorts[inputWait.KeyCode.Name] or inputWait.KeyCode.Name
+                                    button_keybind.Text = K
+                                    chosenKeybind = inputWait.KeyCode.Name
+                                end
                             end
-
-                            if listening then
-                                listening = false
-                                key = input.KeyCode
-                                keyButton.Text = key.Name
-                                tween(keyButton, EASE_FAST, {TextColor3 = THEME.Muted})
-                                return
+                        )
+                        UserInputService.InputBegan:Connect(
+                            function(c, p)
+                                if not p then
+                                    if c.KeyCode.Name == chosenKeybind then
+                                        Configuration_Keybind.Script(chosenKeybind)
+                                    end
+                                end
                             end
+                        )
 
-                            if input.KeyCode == key and not gameProcessed then
-                                pcall(callback)
+                        design_keybind.MouseEnter:Connect(
+                            function()
+                                gradient_design_keybind_2.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(125, 95, 210)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
+                                }
                             end
-                        end)
+                        )
+                        design_keybind.MouseLeave:Connect(
+                            function()
+                                gradient_design_keybind_2.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                }
+                            end
+                        )
 
                         updateSection()
+                        updateSize()
 
                         local KeybindTools = {}
-
-                        function KeybindTools.SetText(newText)
-                            label.Text = tostring(newText)
+                        function KeybindTools.SetText(new)
+                            label_keybind.Text = " " .. new
                         end
-
-                        function KeybindTools.SetKey(newKey)
-                            key = newKey
-                            keyButton.Text = key.Name
+                        function SetLocalKeybindText(new)
+                            label_keybind.Text = " " .. new
                         end
-
-                        function KeybindTools.Destroy()
-                            row:Destroy()
-                            updateSection()
-                        end
-
                         return KeybindTools
                     end
+                    function SectionTools:CreateCheck(Configuration_Check)
+                        Configuration_Check = {
+                            Text = Configuration_Check.Text or "check",
+                            Script = Configuration_Check.Script or function()
+                                end
+                        }
 
-                    function SectionTools:CreateLabel(Configuration_Label)
-                        Configuration_Label = Configuration_Label or {}
+                        local button_toggle = Instance.new("TextButton")
+                        local layout_button_toggle = Instance.new("UIListLayout")
+                        local design_button_toggle = Instance.new("Frame")
+                        local layout_design_button_toggle = Instance.new("UIListLayout")
+                        local gradient_design_button_toggle = Instance.new("UIGradient")
+                        local design_button_toggle_2 = Instance.new("Frame")
+                        local layout_design_button_toggle_2 = Instance.new("UIListLayout")
+                        local gradient_design_button_toggle_2 = Instance.new("UIGradient")
+                        local padding_button_toggle = Instance.new("UIPadding")
 
-                        local holder = create("Frame", {
-                            Parent = section,
-                            BackgroundTransparency = 1,
-                            Size = UDim2.new(1, 0, 0, 22),
-                            LayoutOrder = 10
-                        })
+                        button_toggle.Name = "button_toggle"
+                        button_toggle.Parent = section
+                        button_toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        button_toggle.BackgroundTransparency = 1.000
+                        button_toggle.Position = UDim2.new(0, 0, 0.109170303, 0)
+                        button_toggle.Size = UDim2.new(0, 236, 0, 20)
+                        button_toggle.Font = Enum.Font.Gotham
+                        button_toggle.LineHeight = 1.250
+                        button_toggle.Text = "        " .. Configuration_Check.Text
+                        button_toggle.TextColor3 = Color3.fromRGB(220, 220, 220)
+                        button_toggle.TextSize = 14.000
+                        button_toggle.TextStrokeColor3 = Color3.fromRGB(14, 14, 14)
+                        button_toggle.TextStrokeTransparency = 0.300
+                        button_toggle.TextXAlignment = Enum.TextXAlignment.Left
 
-                        local label = makeText(holder, {
-                            GuiSize = UDim2.new(1, 0, 1, 0),
-                            Text = Configuration_Label.Text or "label",
-                            Font = Enum.Font.Gotham,
-                            Size = 13,
-                            Color = THEME.Muted,
-                            X = Configuration_Label.Alignment or Enum.TextXAlignment.Left
-                        })
+                        layout_button_toggle.Name = "layout_button_toggle"
+                        layout_button_toggle.Parent = button_toggle
+                        layout_button_toggle.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_button_toggle.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        design_button_toggle.Name = "design_button_toggle"
+                        design_button_toggle.Parent = button_toggle
+                        design_button_toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_button_toggle.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_button_toggle.Position = UDim2.new(0, 0, 0.192307696, 0)
+                        design_button_toggle.Size = UDim2.new(0, 14, 0, 14)
+
+                        local corner_design_button_toggle = Instance.new("UICorner")
+
+                        corner_design_button_toggle.CornerRadius = UDim.new(0, 100)
+                        corner_design_button_toggle.Name = "corner_design_button_toggle"
+                        corner_design_button_toggle.Parent = design_button_toggle
+
+                        layout_design_button_toggle.Name = "layout_design_button_toggle"
+                        layout_design_button_toggle.Parent = design_button_toggle
+                        layout_design_button_toggle.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_design_button_toggle.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_button_toggle.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        gradient_design_button_toggle.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                        }
+                        gradient_design_button_toggle.Rotation = 90
+                        gradient_design_button_toggle.Name = "gradient_design_button_toggle"
+                        gradient_design_button_toggle.Parent = design_button_toggle
+
+                        design_button_toggle_2.Name = "design_button_toggle_2"
+                        design_button_toggle_2.Parent = design_button_toggle
+                        design_button_toggle_2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        design_button_toggle_2.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                        design_button_toggle_2.BorderSizePixel = 0
+                        design_button_toggle_2.Position = UDim2.new(0, 0, 0.192307696, 0)
+                        design_button_toggle_2.Size = UDim2.new(0, 12, 0, 12)
+
+                        local corner_design_button_toggle_2 = Instance.new("UICorner")
+
+                        corner_design_button_toggle_2.CornerRadius = UDim.new(0, 100)
+                        corner_design_button_toggle_2.Name = "corner_design_button_toggle_2"
+                        corner_design_button_toggle_2.Parent = design_button_toggle_2
+
+                        layout_design_button_toggle_2.Name = "layout_design_button_toggle_2"
+                        layout_design_button_toggle_2.Parent = design_button_toggle_2
+                        layout_design_button_toggle_2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_design_button_toggle_2.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_design_button_toggle_2.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        gradient_design_button_toggle_2.Color =
+                            ColorSequence.new {
+                            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
+                            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                        }
+                        gradient_design_button_toggle_2.Rotation = 90
+                        gradient_design_button_toggle_2.Name = "gradient_design_button_toggle_2"
+                        gradient_design_button_toggle_2.Parent = design_button_toggle_2
+
+                        padding_button_toggle.Name = "padding_button_toggle"
+                        padding_button_toggle.Parent = button_toggle
+                        padding_button_toggle.PaddingLeft = UDim.new(0, 8)
 
                         updateSection()
+                        updateSize()
+
+                        local ToggleEnabled = false
+                        button_toggle.MouseButton1Click:Connect(
+                            function()
+                                ToggleEnabled = not ToggleEnabled
+                                local ToggleGradient =
+                                    ToggleEnabled and
+                                    ColorSequence.new {
+                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(125, 95, 210)),
+                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(70, 53, 115))
+                                    } or
+                                    ColorSequence.new {
+                                        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(27, 27, 27)),
+                                        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(29, 29, 29))
+                                    }
+                                gradient_design_button_toggle_2.Color = ToggleGradient
+
+                                if ToggleEnabled then
+                                    Configuration_Check.Script(true)
+                                else
+                                    Configuration_Check.Script(false)
+                                end
+                            end
+                        )
+
+                        button_toggle.MouseEnter:Connect(
+                            function()
+                                gradient_design_button_toggle.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(125, 95, 210)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(93, 71, 152))
+                                }
+                            end
+                        )
+                        button_toggle.MouseLeave:Connect(
+                            function()
+                                gradient_design_button_toggle.Color =
+                                    ColorSequence.new {
+                                    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(38, 38, 38)),
+                                    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(34, 34, 34))
+                                }
+                            end
+                        )
+
+                        local CheckTools = {}
+                        function SetLocalCheckText(new)
+                            button_toggle.Text = "        " .. new
+                        end
+                        function CheckTools.SetText(new)
+                            button_toggle.Text = "        " .. new
+                        end
+                        function DestroyLocalCheck()
+                            button_toggle:Destroy()
+                            updateSection()
+                            updateSize()
+                        end
+                        function CheckTools.Destroy()
+                            button_toggle:Destroy()
+                            updateSection()
+                            updateSize()
+                        end                        
+                        return CheckTools
+                    end
+                    function SectionTools:CreateLabel(Configuration_Label)
+                        Configuration_Label = {
+                            Text = Configuration_Label.Text or "label",
+                            Alignment = Configuration_Label.Alignment or Enum.TextXAlignment.Left
+                        }
+
+                        local holder_label = Instance.new("Frame")
+                        local layout_label = Instance.new("UIListLayout")
+                        local label = Instance.new("TextLabel")
+
+                        holder_label.Name = "holder_label"
+                        holder_label.Parent = section
+                        holder_label.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        holder_label.BackgroundTransparency = 1.000
+                        holder_label.Position = UDim2.new(0.0169491526, 0, 0.390625, 0)
+                        holder_label.Size = UDim2.new(0, 224, 0, 16)
+
+                        layout_label.Name = "layout_label"
+                        layout_label.Parent = holder_label
+                        layout_label.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_label.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        label.Name = "label"
+                        label.Parent = holder_label
+                        label.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        label.BackgroundTransparency = 1.000
+                        label.Size = UDim2.new(0, 232, 0, 16)
+                        label.Font = Enum.Font.Gotham
+                        label.Text = " " .. Configuration_Label.Text
+                        label.TextColor3 = Color3.fromRGB(225, 225, 225)
+                        label.TextSize = 13.000
+                        label.TextXAlignment = Configuration_Label.Alignment
+                        label.TextTruncate = "AtEnd"
+                        updateSection()
+                        updateSize()
 
                         local LabelTools = {}
-
-                        function LabelTools.SetText(newText)
-                            label.Text = tostring(newText)
+                        function LabelTools.SetText(new)
+                            label.Text = " " .. new
                         end
-
-                        function LabelTools.Destroy()
-                            holder:Destroy()
-                            updateSection()
-                        end
-
                         return LabelTools
                     end
-
                     function SectionTools:CreateDivider()
-                        local holder = create("Frame", {
-                            Parent = section,
-                            BackgroundTransparency = 1,
-                            Size = UDim2.new(1, 0, 0, 10),
-                            LayoutOrder = 10
-                        })
+                        local holder_cut = Instance.new("Frame")
+                        local layout_cut = Instance.new("UIListLayout")
+                        local cut = Instance.new("Frame")
 
-                        local line = create("Frame", {
-                            Parent = holder,
-                            AnchorPoint = Vector2.new(0.5, 0.5),
-                            Position = UDim2.fromScale(0.5, 0.5),
-                            Size = UDim2.new(1, -4, 0, 1),
-                            BackgroundColor3 = Color3.fromRGB(48, 48, 48),
-                            BackgroundTransparency = 0.35,
-                            BorderSizePixel = 0
-                        })
+                        holder_cut.Name = "holder_cut"
+                        holder_cut.Parent = section
+                        holder_cut.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        holder_cut.BackgroundTransparency = 1.000
+                        holder_cut.Position = UDim2.new(0.0254237279, 0, 0.733333349, 0)
+                        holder_cut.Size = UDim2.new(0, 224, 0, 3)
 
+                        layout_cut.Name = "layout_cut"
+                        layout_cut.Parent = holder_cut
+                        layout_cut.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                        layout_cut.SortOrder = Enum.SortOrder.LayoutOrder
+                        layout_cut.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                        cut.Name = "cut"
+                        cut.Parent = holder_cut
+                        cut.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+                        cut.BorderSizePixel = 0
+                        cut.Size = UDim2.new(0, 218, 0, 1)
                         updateSection()
-
-                        return line
+                        updateSize()
                     end
-
-                    function SectionTools.SetHeader(newHeader)
-                        if headerLabel then
-                            headerLabel.Text = tostring(newHeader)
-                        end
+                    function SectionTools.SetHeader(new)
+                        section_header.Text = new
                     end
-
-                    function SectionTools.Destroy()
-                        section:Destroy()
-                        pageData.UpdateCanvas()
-                    end
-
                     return SectionTools
                 end
-
-                function PageTools.SetSubject(newSubject)
-                    subject = tostring(newSubject)
-                    tabText.Text = subject
-
-                    local newWidth = math.max(68, TextService:GetTextSize(subject, 13, Enum.Font.Gotham, Vector2.new(math.huge, 22)).X + 28)
-                    tween(tabButton, EASE_FAST, {Size = UDim2.fromOffset(newWidth, 28)})
+                function PageTools.SetSubject(new)
+                    button_tab.Text = new
+                    local newTabButtonSize =
+                        TextService:GetTextSize(
+                        button_tab.Text,
+                        button_tab.TextSize,
+                        button_tab.Font,
+                        Vector2.new(math.huge, math.huge)
+                    )
+                    button_tab.Size = UDim2.new(0, 12 + newTabButtonSize.X, 0, button_tab.Size.Y.Offset)
+                    cut_button_tab.Size = UDim2.new(0, button_tab.Size.X.Offset - 4, 0, 1)
                 end
-
-                function PageTools.SetFooter(newFooter)
-                    pageData.Footer = tostring(newFooter)
-                    if selectedPage == pageData then
-                        tinyFooter.Text = htmlEscape(newFooter)
-                    end
+                function PageTools.SetFooter(new)
+                    footer_label.Text = new
                 end
-
-                function PageTools.Destroy()
-                    page:Destroy()
-                    tabButton:Destroy()
-
-                    for i, data in ipairs(pages) do
-                        if data == pageData then
-                            table.remove(pages, i)
-                            break
-                        end
-                    end
-
-                    pageButtons[tabButton] = nil
-
-                    if selectedPage == pageData then
-                        selectedPage = nil
-                        if pages[1] then
-                            selectPage(pages[1])
-                        end
-                    end
-                end
-
                 return PageTools
             end
-
-            function InterfaceTools.SetHeader(newHeader)
-                title.Text = htmlEscape(string.lower(tostring(newHeader))) .. ' <font color="rgb(125,95,210)">[' .. htmlEscape(version) .. ']</font>'
+            function InterfaceTools.SetHeader(new)
+                header_label.Text = string.lower(new) .. ' <font color="rgb(125,95,210)">[' .. Configuration.Version .. ']</font>'
             end
-
-            function InterfaceTools.SetFooter(newFooter)
-                footer = tostring(newFooter)
-                tinyFooter.Text = htmlEscape(footer)
+            function InterfaceTools.SetFooter(new)
+                footer_label.Text = new
             end
-
-            function InterfaceTools.SetDragLatency(newLatency)
-                dragLatency = tonumber(newLatency) or dragLatency
+            function InterfaceTools.SetDragLatency(new)
+                designLatency = new
             end
-
-            function InterfaceTools.SetVisibleKeybind(newKey)
-                visKey = newKey
+            function InterfaceTools.SetVisibleKeybind(new)
+                visKey = new
             end
-
-            function InterfaceTools.Show()
-                showWindow(true)
-            end
-
-            function InterfaceTools.Hide()
-                showWindow(false)
-            end
-
-            function InterfaceTools.Toggle()
-                showWindow(not visible)
-            end
-
             function InterfaceTools.Destroy()
-                destroyed = true
-                local out = tween(window, EASE_FAST, {
-                    GroupTransparency = 1,
-                    Position = UDim2.fromScale(0.5, 0.485)
-                })
-                tween(dim, EASE_FAST, {BackgroundTransparency = 1})
-                task.spawn(function()
-                    out.Completed:Wait()
-                    if screen then
-                        screen:Destroy()
-                    end
-                end)
+                private:Destroy()
             end
-
-            UserInputService.InputBegan:Connect(function(input, gameProcessed)
-                if gameProcessed then
-                    return
-                end
-
-                if input.KeyCode == visKey then
-                    showWindow(not visible)
-                end
-            end)
-
-            tween(dim, EASE_MED, {BackgroundTransparency = 0.08})
-            task.wait(0.03)
-            tween(window, EASE_SLOW, {
-                Position = UDim2.fromScale(0.5, 0.5),
-                GroupTransparency = 0
-            })
-            tween(winScale, EASE_SLOW, {Scale = 1})
-
-            task.spawn(function()
-                while screen.Parent and not destroyed do
-                    tween(activeDivider, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-                        BackgroundTransparency = 0.1
-                    })
-                    task.wait(1.2)
-                    tween(activeDivider, TweenInfo.new(1.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
-                        BackgroundTransparency = 0.55
-                    })
-                    task.wait(1.2)
-                end
-            end)
-
             return InterfaceTools
         end
-
         return Interface
     end
+    if string.find(string.lower(SelectedLibrary), "notif") then
+        local notifications = Instance.new("ScreenGui")
+        local layout_notifications = Instance.new("UIListLayout")
+        local padding_notifications = Instance.new("UIPadding")
 
-    if string.find(selectedLibrary, "notif") then
-        local notifications = create("ScreenGui", {
-            Name = "HashHub_Notifications",
-            IgnoreGuiInset = true,
-            ResetOnSpawn = false,
-            ZIndexBehavior = Enum.ZIndexBehavior.Global
-        })
+        notifications.Name = "notifications"
+        notifications.Parent = CoreGuiService
+        notifications.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        HH_AutoSkin(notifications)
 
-        protectGui(notifications)
+        layout_notifications.Name = "layout_notifications"
+        layout_notifications.Parent = notifications
+        layout_notifications.SortOrder = Enum.SortOrder.LayoutOrder
+        layout_notifications.Padding = UDim.new(0, 4)
 
-        local holder = create("Frame", {
-            Parent = notifications,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 24, 0, 58),
-            Size = UDim2.new(0, 360, 1, -80)
-        })
-
-        local layout = listLayout(holder, Enum.FillDirection.Vertical, 8)
+        padding_notifications.Name = "padding_notifications"
+        padding_notifications.Parent = notifications
+        padding_notifications.PaddingLeft = UDim.new(0, 25)
+        padding_notifications.PaddingTop = UDim.new(0, 60)
 
         local NotificationLibrary = {}
-
         function NotificationLibrary:Send(Configuration)
             Configuration = Configuration or {}
+            Configuration = {
+                Header = Configuration.Header or "undefined header",
+                Notification = Configuration.Notification or "undefined notification",
+                Time = Configuration.Time or 3
+            }
 
-            local header = Configuration.Header or "hash hub"
-            local note = Configuration.Notification or "notification"
-            local time = tonumber(Configuration.Time or 3) or 3
+            local design = Instance.new("Frame")
+            local layout_design = Instance.new("UIListLayout")
+            local design_1 = Instance.new("Frame")
+            local layout_design_1 = Instance.new("UIListLayout")
+            local haeder_notification = Instance.new("TextLabel")
+            local padding_header_notification = Instance.new("UIPadding")
+            local design_2_cutoff = Instance.new("Frame")
+            local gradient_design_2_cutoff = Instance.new("UIGradient")
+            local note_notification = Instance.new("TextLabel")
+            local padding_note_notification = Instance.new("UIPadding")
 
-            local noteSize = TextService:GetTextSize(note, 13, Enum.Font.Gotham, Vector2.new(320, math.huge))
-            local height = math.clamp(noteSize.Y + 56, 74, 150)
+            design.Name = "design"
+            design.Parent = notifications
+            design.BackgroundColor3 = HH_THEME.Dark
+            design.BorderColor3 = HH_THEME.Line
+            design.BorderSizePixel = 0
+            design.BackgroundTransparency = 0
+            design.Position = UDim2.new(0.0193798449, 0, 0.0727272704, 0)
+            design.Size = UDim2.new(0, 332, 0, 70)
 
-            local card = create("CanvasGroup", {
-                Parent = holder,
-                BackgroundColor3 = THEME.Card,
-                BorderSizePixel = 0,
-                Size = UDim2.new(0, 350, 0, height),
-                GroupTransparency = 1
-            })
+            layout_design.Name = "layout_design"
+            layout_design.Parent = design
+            layout_design.HorizontalAlignment = Enum.HorizontalAlignment.Center
+            layout_design.SortOrder = Enum.SortOrder.LayoutOrder
+            layout_design.VerticalAlignment = Enum.VerticalAlignment.Center
 
-            corner(card, 10)
-            stroke(card, THEME.StrokeSoft, 0.08, 1)
-            setGradient(card, Color3.fromRGB(22, 22, 22), Color3.fromRGB(16, 16, 16), 90)
+            design_1.Name = "design_1"
+            design_1.Parent = design
+            design_1.AnchorPoint = Vector2.new(0.5, 0.5)
+            design_1.BackgroundColor3 = HH_THEME.Dark
+            design_1.BorderColor3 = HH_THEME.Line
+            design_1.BorderSizePixel = 0
+            design_1.Position = UDim2.new(0.5, 0, 0.432098776, 0)
+            design_1.Size = UDim2.new(0, 326, 0, 64)
 
-            local accent = create("Frame", {
-                Parent = card,
-                BackgroundColor3 = THEME.Purple,
-                BackgroundTransparency = 0.15,
-                BorderSizePixel = 0,
-                Position = UDim2.new(0, 14, 0, 13),
-                Size = UDim2.new(0, 76, 0, 1)
-            })
+            layout_design_1.Name = "layout_design_1"
+            layout_design_1.Parent = design_1
+            layout_design_1.HorizontalAlignment = Enum.HorizontalAlignment.Center
+            layout_design_1.SortOrder = Enum.SortOrder.LayoutOrder
 
-            local headerLabel = makeText(card, {
-                GuiSize = UDim2.new(1, -28, 0, 22),
-                Position = UDim2.new(0, 14, 0, 17),
-                Text = tostring(header),
-                Font = Enum.Font.Gotham,
-                Size = 14,
-                Color = THEME.TextBright,
-                X = Enum.TextXAlignment.Left
-            })
+            haeder_notification.Name = "haeder_notification"
+            haeder_notification.Parent = design_1
+            haeder_notification.BackgroundColor3 = HH_THEME.Dark
+            haeder_notification.BorderSizePixel = 0
+            haeder_notification.Position = UDim2.new(0.193251535, 0, -0.0681818202, 0)
+            haeder_notification.Size = UDim2.new(0, 326, 0, 24)
+            haeder_notification.Font = Enum.Font.Gotham
+            haeder_notification.RichText = true
+            haeder_notification.Text = string.lower(Configuration.Header)
+            haeder_notification.TextColor3 = HH_THEME.Text
+            haeder_notification.TextSize = 15.000
+            haeder_notification.TextXAlignment = Enum.TextXAlignment.Left
 
-            local noteLabel = makeText(card, {
-                GuiSize = UDim2.new(1, -28, 1, -44),
-                Position = UDim2.new(0, 14, 0, 42),
-                Text = tostring(note),
-                Font = Enum.Font.Gotham,
-                Size = 13,
-                Color = THEME.Muted,
-                X = Enum.TextXAlignment.Left,
-                Y = Enum.TextYAlignment.Top
-            })
+            padding_header_notification.Name = "padding_header_notification"
+            padding_header_notification.Parent = haeder_notification
+            padding_header_notification.PaddingBottom = UDim.new(0, 4)
+            padding_header_notification.PaddingLeft = UDim.new(0, 4)
+            padding_header_notification.PaddingRight = UDim.new(0, 4)
+            padding_header_notification.PaddingTop = UDim.new(0, 2)
 
-            noteLabel.TextWrapped = true
-            noteLabel.TextTruncate = Enum.TextTruncate.None
+            design_2_cutoff.Name = "design_2_cutoff"
+            design_2_cutoff.Parent = design_1
+            design_2_cutoff.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            design_2_cutoff.BorderSizePixel = 0
+            design_2_cutoff.Position = UDim2.new(0, 0, 1, 0)
+            design_2_cutoff.Size = UDim2.new(0, 326, 0, 1)
 
-            local scale = create("UIScale", {
-                Parent = card,
-                Scale = 0.96
-            })
+            gradient_design_2_cutoff.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(125, 95, 210)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(55, 42, 91))}
+            gradient_design_2_cutoff.Rotation = 90
+            gradient_design_2_cutoff.Name = "gradient_design_2_cutoff"
+            gradient_design_2_cutoff.Parent = design_2_cutoff
 
-            card.Position = UDim2.new(0, -26, 0, 0)
+            note_notification.Name = "note_notification"
+            note_notification.Parent = design_1
+            note_notification.BackgroundColor3 = HH_THEME.Dark
+            note_notification.BorderSizePixel = 0
+            note_notification.Position = UDim2.new(0, 0, 0.333333343, 0)
+            note_notification.Size = UDim2.new(0, 326, 0, 33)
+            note_notification.Font = Enum.Font.Gotham
+            note_notification.Text = Configuration.Notification
+            note_notification.TextColor3 = HH_THEME.Muted
+            note_notification.TextSize = 12.000
+            note_notification.TextWrapped = false
+            note_notification.TextXAlignment = Enum.TextXAlignment.Left
+            note_notification.TextYAlignment = Enum.TextYAlignment.Top
 
-            tween(card, EASE_MED, {
-                GroupTransparency = 0,
-                Position = UDim2.new(0, 0, 0, 0)
-            })
-            tween(scale, EASE_MED, {Scale = 1})
+            padding_note_notification.Name = "padding_note_notification"
+            padding_note_notification.Parent = note_notification
+            padding_note_notification.PaddingBottom = UDim.new(0, 0)
+            padding_note_notification.PaddingLeft = UDim.new(0, 4)
+            padding_note_notification.PaddingRight = UDim.new(0, 4)
+            padding_note_notification.PaddingTop = UDim.new(0, 4)
+        
+            local newNotificationSize = TextService:GetTextSize(note_notification.Text, note_notification.TextSize, note_notification.Font, Vector2.new(math.huge, math.huge))
+            design.Size = UDim2.new(0, 332, 0, newNotificationSize.Y + 40)
+            design_1.Size = UDim2.new(0, 326, 0, newNotificationSize.Y + 34)
+            note_notification.Size = UDim2.new(0, 326, 0, newNotificationSize.Y)
+            
+            design.Position = UDim2.new(0.0193798449, -18, 0.0727272704, 0)
+            HH_Tween(design, 0.28, {Position = UDim2.new(0.0193798449, 0, 0.0727272704, 0)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
-            task.delay(time, function()
-                if not card.Parent then
-                    return
-                end
-
-                tween(scale, EASE_FAST, {Scale = 0.96})
-                local out = tween(card, EASE_FAST, {
-                    GroupTransparency = 1,
-                    Position = UDim2.new(0, -26, 0, 0)
-                })
-
+            function des()
+                wait(Configuration.Time)
+                local out = HH_Tween(design, 0.22, {Position = UDim2.new(0.0193798449, -18, 0.0727272704, 0)}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
                 out.Completed:Wait()
-
-                if card.Parent then
-                    card:Destroy()
-                end
-            end)
+                design:Destroy()
+            end
+            coroutine.wrap(des)(design, Configuration.Time)
         end
-
         return NotificationLibrary
     end
 end
-
-return HashHubLibrary
+return bungiesLibrary
