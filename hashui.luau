@@ -160,16 +160,15 @@ function bungiesLibrary.Load(SelectedLibrary)
         function Interface:Start(Configuration)
             ui = true
             Configuration = Configuration or {}
-            local _HashInputConfiguration = Configuration
             Configuration = {
-                Header = _HashInputConfiguration.Header or "undefined header",
-                Footer = _HashInputConfiguration.Footer or
+                Header = Configuration.Header or "undefined header",
+                Footer = Configuration.Footer or
                     "undefined footer  |   " ..
                         game.Players.LocalPlayer.Name ..
                             " | " .. os.date("%d") .. "/" .. os.date("%m") .. "/" .. os.date("%Y"),
-                VisibleKeybind = _HashInputConfiguration.VisibleKeybind or Enum.KeyCode.RightAlt,
-                Version = _HashInputConfiguration.Version or "2.6.3",
-                LoadingDuration = _HashInputConfiguration.LoadingDuration or _HashInputConfiguration.LoaderDuration or _HashInputConfiguration.IntroDuration or 8.5
+                VisibleKeybind = Configuration.VisibleKeybind or Enum.KeyCode.RightAlt,
+                Version = Configuration.Version or "2.6.3",
+                LoadingDuration = tonumber(Configuration.LoadingDuration) or 10
             }
 
             --// Hash Hub loading-screen style layer
@@ -492,7 +491,7 @@ function bungiesLibrary.Load(SelectedLibrary)
             local introFinished = false
             local introEvent = Instance.new("BindableEvent")
             local interfacePosition = design.Position
-            local interfaceTweenInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            local interfaceTweenInfo = TweenInfo.new(0.26, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
             local function setInterfaceVisible(state)
                 if interfaceAnimating or interfaceVisible == state then
@@ -674,22 +673,87 @@ function bungiesLibrary.Load(SelectedLibrary)
             layout_design.VerticalAlignment = Enum.VerticalAlignment.Center
 
             styleTree(private)
-            --// Start fully hidden so the old/original shell never flashes on-screen.
+
+            --// Hard-force the centered Hash Hub layout so the old top-left shell can never leak through.
+            local function forceShellLayout()
+                pcall(function()
+                    design.Visible = design.Visible
+                    design.AnchorPoint = Vector2.new(0.5, 0.5)
+                    design.Position = UDim2.new(0.5, 0, 0.5, 0)
+                    design.Size = UDim2.new(0, 513, 0, 585)
+                    design.BackgroundColor3 = HashTheme.Background
+                    design.BorderSizePixel = 0
+
+                    design_1.AnchorPoint = Vector2.new(0.5, 0.5)
+                    design_1.Position = UDim2.new(0.5, 0, 0.5, 0)
+                    design_1.Size = UDim2.new(0, 509, 0, 581)
+                    design_1.BackgroundColor3 = HashTheme.Background
+                    design_1.BorderSizePixel = 0
+
+                    background.AnchorPoint = Vector2.new(0.5, 0.5)
+                    background.Position = UDim2.new(0.5, 0, 0.5, 0)
+                    background.Size = UDim2.new(0, 505, 0, 577)
+                    background.BackgroundColor3 = HashTheme.Background
+                    background.BorderSizePixel = 0
+
+                    header_label.BackgroundTransparency = 1
+                    header_label.Position = UDim2.new(0, 0, 0, 7)
+                    header_label.Size = UDim2.new(0, 505, 0, 28)
+                    header_label.Font = Enum.Font.Gotham
+                    header_label.TextSize = 25
+                    header_label.RichText = true
+                    header_label.Text = hashTitle(Configuration.Header, Configuration.Version)
+                    header_label.TextColor3 = HashTheme.Text
+                    header_label.TextXAlignment = Enum.TextXAlignment.Center
+                    header_label.TextYAlignment = Enum.TextYAlignment.Center
+                    header_label.TextStrokeTransparency = 1
+
+                    cut_header.AnchorPoint = Vector2.new(0.5, 0.5)
+                    cut_header.Position = UDim2.new(0.5, 0, 0, 36)
+                    cut_header.Size = UDim2.new(0, 112, 0, 1)
+                    cut_header.BackgroundColor3 = HashTheme.Accent
+                    cut_header.BackgroundTransparency = 0.25
+                    cut_header.BorderSizePixel = 0
+
+                    container_tab_buttons.BackgroundColor3 = HashTheme.Background
+                    container_tab_buttons.BorderSizePixel = 0
+                    container_tab_buttons.Position = UDim2.new(0, 0, 0, 42)
+                    container_tab_buttons.Size = UDim2.new(0, 505, 0, 30)
+
+                    cut_tab_buttons.BackgroundColor3 = HashTheme.StrokeSoft
+                    cut_tab_buttons.BackgroundTransparency = 0.15
+                    cut_tab_buttons.Position = UDim2.new(0, 0, 0, 73)
+                    cut_tab_buttons.Size = UDim2.new(0, 505, 0, 1)
+
+                    container_tabs.BackgroundColor3 = HashTheme.Background
+                    container_tabs.BorderSizePixel = 0
+                    container_tabs.Position = UDim2.new(0, 0, 0, 76)
+                    container_tabs.Size = UDim2.new(0, 504, 0, 477)
+
+                    footer_label.BackgroundTransparency = 1
+                    footer_label.Position = UDim2.new(0, 0, 1, -20)
+                    footer_label.Size = UDim2.new(0, 505, 0, 18)
+                    footer_label.Font = Enum.Font.Gotham
+                    footer_label.TextSize = 12
+                    footer_label.TextColor3 = HashTheme.SubText
+                    footer_label.TextXAlignment = Enum.TextXAlignment.Center
+                    footer_label.TextYAlignment = Enum.TextYAlignment.Center
+                    footer_label.TextStrokeTransparency = 1
+
+                    cut_footer.BackgroundColor3 = HashTheme.StrokeSoft
+                    cut_footer.BackgroundTransparency = 0.35
+                    cut_footer.Position = UDim2.new(0, 0, 1, -24)
+                    cut_footer.Size = UDim2.new(0, 505, 0, 1)
+                end)
+            end
+
+            forceShellLayout()
             design.Visible = false
-            designScale.Scale = 1
+            designScale.Scale = 0.96
 
-            --// Integrated Hash Hub loader morph.
-            --// Flow: video-style wipe -> centered loader -> longer hold -> card expands -> GUI appears.
-            local MorphTheme = {
-                Dark = Color3.fromRGB(25, 25, 25),
-                Dark2 = Color3.fromRGB(28, 28, 28),
-                Purple = Color3.fromRGB(120, 94, 190),
-                White = Color3.fromRGB(242, 242, 242),
-                Text = Color3.fromRGB(205, 205, 210),
-                Muted = Color3.fromRGB(170, 170, 178)
-            }
-
-            local function morphTween(obj, time, props, style, dir)
+            --// Integrated loader -> GUI morph.
+            --// 10 seconds by default. Use UI:Start({LoadingDuration = 12}) to change it.
+            local function makeMorphTween(obj, time, props, style, dir)
                 local tw = TweenService:Create(
                     obj,
                     TweenInfo.new(time, style or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out),
@@ -704,189 +768,186 @@ function bungiesLibrary.Load(SelectedLibrary)
             morphOverlay.Parent = private
             morphOverlay.Size = UDim2.fromScale(1, 1)
             morphOverlay.Position = UDim2.fromScale(0, 0)
-            morphOverlay.BackgroundColor3 = MorphTheme.Dark
+            morphOverlay.BackgroundColor3 = HashTheme.Background
             morphOverlay.BackgroundTransparency = 1
             morphOverlay.BorderSizePixel = 0
             morphOverlay.ZIndex = 9000
 
-            local morphBars = Instance.new("Frame")
-            morphBars.Name = "WipeBars"
-            morphBars.Parent = morphOverlay
-            morphBars.Size = UDim2.fromScale(1, 1)
-            morphBars.BackgroundTransparency = 1
-            morphBars.ClipsDescendants = false
-            morphBars.ZIndex = 9005
+            local wipeHolder = Instance.new("Frame")
+            wipeHolder.Name = "WipeBars"
+            wipeHolder.Parent = morphOverlay
+            wipeHolder.Size = UDim2.fromScale(1, 1)
+            wipeHolder.BackgroundTransparency = 1
+            wipeHolder.ZIndex = 9005
 
-            local function makeMorphBar(name, color, x, width, z)
-                local frame = Instance.new("Frame")
-                frame.Name = name
-                frame.Parent = morphBars
-                frame.AnchorPoint = Vector2.new(0.5, 0.5)
-                frame.Position = UDim2.fromScale(x, 0.5)
-                frame.Size = UDim2.fromScale(width, 1.15)
-                frame.BackgroundColor3 = color
-                frame.BackgroundTransparency = 0
-                frame.BorderSizePixel = 0
-                frame.ZIndex = z or 9006
-                return frame
+            local function makeBar(name, color, x, width, z)
+                local bar = Instance.new("Frame")
+                bar.Name = name
+                bar.Parent = wipeHolder
+                bar.AnchorPoint = Vector2.new(0.5, 0.5)
+                bar.Position = UDim2.fromScale(x, 0.5)
+                bar.Size = UDim2.fromScale(width, 1.15)
+                bar.BackgroundColor3 = color
+                bar.BackgroundTransparency = 0
+                bar.BorderSizePixel = 0
+                bar.ZIndex = z
+                return bar
             end
 
-            local leftPurple = makeMorphBar("LeftPurple", MorphTheme.Purple, 0.34, 0.14, 9006)
-            local leftWhite = makeMorphBar("LeftWhite", MorphTheme.White, 0.45, 0.072, 9007)
-            local centerDark = makeMorphBar("CenterDark", MorphTheme.Dark2, 0.50, 0.11, 9008)
-            local rightWhite = makeMorphBar("RightWhite", MorphTheme.White, 0.55, 0.072, 9007)
-            local rightPurple = makeMorphBar("RightPurple", MorphTheme.Purple, 0.66, 0.14, 9006)
+            local leftPurple = makeBar("LeftPurple", HashTheme.Accent, 0.34, 0.14, 9006)
+            local leftWhite = makeBar("LeftWhite", Color3.fromRGB(240, 240, 240), 0.45, 0.072, 9007)
+            local centerDark = makeBar("CenterDark", HashTheme.Background3, 0.50, 0.11, 9008)
+            local rightWhite = makeBar("RightWhite", Color3.fromRGB(240, 240, 240), 0.55, 0.072, 9007)
+            local rightPurple = makeBar("RightPurple", HashTheme.Accent, 0.66, 0.14, 9006)
 
-            local morphCard = Instance.new("Frame")
-            morphCard.Name = "MorphCard"
-            morphCard.Parent = morphOverlay
-            morphCard.AnchorPoint = Vector2.new(0.5, 0.5)
-            morphCard.Position = UDim2.fromScale(0.5, 0.505)
-            morphCard.Size = UDim2.fromOffset(420, 120)
-            morphCard.BackgroundColor3 = MorphTheme.Dark2
-            morphCard.BackgroundTransparency = 1
-            morphCard.BorderSizePixel = 0
-            morphCard.ClipsDescendants = true
-            morphCard.ZIndex = 9009
-            addCorner(morphCard, 7)
+            local centerLoader = Instance.new("Frame")
+            centerLoader.Name = "CenterLoader"
+            centerLoader.Parent = morphOverlay
+            centerLoader.AnchorPoint = Vector2.new(0.5, 0.5)
+            centerLoader.Position = UDim2.fromScale(0.5, 0.518)
+            centerLoader.Size = UDim2.fromOffset(440, 130)
+            centerLoader.BackgroundTransparency = 1
+            centerLoader.ZIndex = 9010
 
-            local morphStroke = Instance.new("UIStroke")
-            morphStroke.Name = "MorphStroke"
-            morphStroke.Parent = morphCard
-            morphStroke.Color = Color3.fromRGB(58, 58, 66)
-            morphStroke.Thickness = 1
-            morphStroke.Transparency = 1
+            local centerLoaderScale = Instance.new("UIScale")
+            centerLoaderScale.Name = "CenterLoaderScale"
+            centerLoaderScale.Parent = centerLoader
+            centerLoaderScale.Scale = 1.65
 
-            local morphCenter = Instance.new("Frame")
-            morphCenter.Name = "CenterText"
-            morphCenter.Parent = morphOverlay
-            morphCenter.AnchorPoint = Vector2.new(0.5, 0.5)
-            morphCenter.Position = UDim2.fromScale(0.5, 0.518)
-            morphCenter.Size = UDim2.fromOffset(420, 120)
-            morphCenter.BackgroundTransparency = 1
-            morphCenter.ZIndex = 9010
+            local loaderTitle = Instance.new("TextLabel")
+            loaderTitle.Name = "LoaderTitle"
+            loaderTitle.Parent = centerLoader
+            loaderTitle.AnchorPoint = Vector2.new(0.5, 0.5)
+            loaderTitle.Position = UDim2.fromScale(0.5, 0.33)
+            loaderTitle.Size = UDim2.fromOffset(440, 34)
+            loaderTitle.BackgroundTransparency = 1
+            loaderTitle.Font = Enum.Font.Gotham
+            loaderTitle.TextSize = 28
+            loaderTitle.RichText = true
+            loaderTitle.Text = hashTitle(Configuration.Header, Configuration.Version)
+            loaderTitle.TextColor3 = HashTheme.Text
+            loaderTitle.TextTransparency = 1
+            loaderTitle.TextXAlignment = Enum.TextXAlignment.Center
+            loaderTitle.TextYAlignment = Enum.TextYAlignment.Center
+            loaderTitle.TextStrokeTransparency = 1
+            loaderTitle.ZIndex = 9011
 
-            local morphScale = Instance.new("UIScale")
-            morphScale.Name = "CenterScale"
-            morphScale.Parent = morphCenter
-            morphScale.Scale = 1.65
+            local loaderLine = Instance.new("Frame")
+            loaderLine.Name = "LoaderUnderline"
+            loaderLine.Parent = centerLoader
+            loaderLine.AnchorPoint = Vector2.new(0.5, 0.5)
+            loaderLine.Position = UDim2.fromScale(0.5, 0.50)
+            loaderLine.Size = UDim2.fromOffset(0, 1)
+            loaderLine.BackgroundColor3 = HashTheme.Accent
+            loaderLine.BackgroundTransparency = 1
+            loaderLine.BorderSizePixel = 0
+            loaderLine.ZIndex = 9011
 
-            local morphTitle = Instance.new("TextLabel")
-            morphTitle.Name = "Title"
-            morphTitle.Parent = morphCenter
-            morphTitle.AnchorPoint = Vector2.new(0.5, 0.5)
-            morphTitle.Position = UDim2.fromScale(0.5, 0.33)
-            morphTitle.Size = UDim2.fromOffset(420, 34)
-            morphTitle.BackgroundTransparency = 1
-            morphTitle.Font = Enum.Font.Gotham
-            morphTitle.TextSize = 28
-            morphTitle.RichText = true
-            morphTitle.Text = hashTitle(Configuration.Header, Configuration.Version)
-            morphTitle.TextColor3 = MorphTheme.Text
-            morphTitle.TextTransparency = 1
-            morphTitle.TextXAlignment = Enum.TextXAlignment.Center
-            morphTitle.TextYAlignment = Enum.TextYAlignment.Center
-            morphTitle.ZIndex = 9011
+            local loaderSubtitle = Instance.new("TextLabel")
+            loaderSubtitle.Name = "LoaderSubtitle"
+            loaderSubtitle.Parent = centerLoader
+            loaderSubtitle.AnchorPoint = Vector2.new(0.5, 0.5)
+            loaderSubtitle.Position = UDim2.fromScale(0.5, 0.66)
+            loaderSubtitle.Size = UDim2.fromOffset(440, 24)
+            loaderSubtitle.BackgroundTransparency = 1
+            loaderSubtitle.Font = Enum.Font.Gotham
+            loaderSubtitle.TextSize = 13
+            loaderSubtitle.RichText = true
+            loaderSubtitle.Text = 'welcome, <font color="rgb(125,95,210)">' .. escapeRich(Player.DisplayName ~= "" and Player.DisplayName or Player.Name) .. '</font>, please wait.'
+            loaderSubtitle.TextColor3 = HashTheme.SubText
+            loaderSubtitle.TextTransparency = 1
+            loaderSubtitle.TextXAlignment = Enum.TextXAlignment.Center
+            loaderSubtitle.TextYAlignment = Enum.TextYAlignment.Center
+            loaderSubtitle.TextStrokeTransparency = 1
+            loaderSubtitle.ZIndex = 9011
 
-            local morphUnderline = Instance.new("Frame")
-            morphUnderline.Name = "Underline"
-            morphUnderline.Parent = morphCenter
-            morphUnderline.AnchorPoint = Vector2.new(0.5, 0.5)
-            morphUnderline.Position = UDim2.fromScale(0.5, 0.50)
-            morphUnderline.Size = UDim2.fromOffset(0, 1)
-            morphUnderline.BackgroundColor3 = MorphTheme.Purple
-            morphUnderline.BackgroundTransparency = 1
-            morphUnderline.BorderSizePixel = 0
-            morphUnderline.ZIndex = 9011
+            local loaderProgressBack = Instance.new("Frame")
+            loaderProgressBack.Name = "LoaderProgressBack"
+            loaderProgressBack.Parent = centerLoader
+            loaderProgressBack.AnchorPoint = Vector2.new(0.5, 0.5)
+            loaderProgressBack.Position = UDim2.fromScale(0.5, 0.86)
+            loaderProgressBack.Size = UDim2.fromOffset(180, 2)
+            loaderProgressBack.BackgroundColor3 = HashTheme.StrokeSoft
+            loaderProgressBack.BackgroundTransparency = 1
+            loaderProgressBack.BorderSizePixel = 0
+            loaderProgressBack.ZIndex = 9011
 
-            local playerName = (Player and (Player.DisplayName ~= "" and Player.DisplayName or Player.Name)) or "player"
-            local morphSubtitle = Instance.new("TextLabel")
-            morphSubtitle.Name = "Subtitle"
-            morphSubtitle.Parent = morphCenter
-            morphSubtitle.AnchorPoint = Vector2.new(0.5, 0.5)
-            morphSubtitle.Position = UDim2.fromScale(0.5, 0.66)
-            morphSubtitle.Size = UDim2.fromOffset(420, 22)
-            morphSubtitle.BackgroundTransparency = 1
-            morphSubtitle.Font = Enum.Font.Gotham
-            morphSubtitle.TextSize = 13
-            morphSubtitle.RichText = true
-            morphSubtitle.Text = 'welcome, <font color="rgb(120,94,190)">' .. escapeRich(playerName) .. '</font>, please wait.'
-            morphSubtitle.TextColor3 = MorphTheme.Muted
-            morphSubtitle.TextTransparency = 1
-            morphSubtitle.TextXAlignment = Enum.TextXAlignment.Center
-            morphSubtitle.TextYAlignment = Enum.TextYAlignment.Center
-            morphSubtitle.ZIndex = 9011
+            local loaderProgress = Instance.new("Frame")
+            loaderProgress.Name = "LoaderProgress"
+            loaderProgress.Parent = loaderProgressBack
+            loaderProgress.Size = UDim2.fromScale(0, 1)
+            loaderProgress.BackgroundColor3 = HashTheme.Accent
+            loaderProgress.BackgroundTransparency = 0
+            loaderProgress.BorderSizePixel = 0
+            loaderProgress.ZIndex = 9012
 
             task.spawn(function()
-                -- Opening wipe from the loader code.
-                morphTween(morphOverlay, 0.42, {BackgroundTransparency = 0}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                morphTween(centerDark, 0.72, {Size = UDim2.fromScale(1.12, 1.15)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                morphTween(leftWhite, 0.72, {Position = UDim2.fromScale(-0.075, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                morphTween(leftPurple, 0.72, {Position = UDim2.fromScale(-0.25, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                morphTween(rightWhite, 0.72, {Position = UDim2.fromScale(1.075, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                local last = morphTween(rightPurple, 0.72, {Position = UDim2.fromScale(1.25, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                last.Completed:Wait()
+                forceShellLayout()
+                morphOverlay.Visible = true
 
-                morphBars.Visible = false
+                makeMorphTween(morphOverlay, 0.42, {BackgroundTransparency = 0}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                makeMorphTween(centerDark, 0.72, {Size = UDim2.fromScale(1.12, 1.15)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                makeMorphTween(leftWhite, 0.72, {Position = UDim2.fromScale(-0.075, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                makeMorphTween(leftPurple, 0.72, {Position = UDim2.fromScale(-0.25, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                makeMorphTween(rightWhite, 0.72, {Position = UDim2.fromScale(1.075, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                local lastWipe = makeMorphTween(rightPurple, 0.72, {Position = UDim2.fromScale(1.25, 0.5)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                lastWipe.Completed:Wait()
+
+                wipeHolder.Visible = false
                 morphOverlay.BackgroundTransparency = 0
-                task.wait(0.12)
 
-                morphTween(morphCenter, 0.75, {Position = UDim2.fromScale(0.5, 0.505)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                morphTween(morphTitle, 0.55, {TextTransparency = 0}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-                task.wait(0.16)
-                morphTween(morphUnderline, 0.52, {
-                    Size = UDim2.fromOffset(165, 1),
-                    BackgroundTransparency = 0.15
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                task.wait(0.12)
-                morphTween(morphSubtitle, 0.48, {TextTransparency = 0}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+                makeMorphTween(centerLoader, 0.7, {Position = UDim2.fromScale(0.5, 0.505)}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                makeMorphTween(loaderTitle, 0.48, {TextTransparency = 0}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+                task.wait(0.14)
+                makeMorphTween(loaderLine, 0.45, {Size = UDim2.fromOffset(165, 1), BackgroundTransparency = 0.15}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                task.wait(0.1)
+                makeMorphTween(loaderSubtitle, 0.42, {TextTransparency = 0}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+                makeMorphTween(loaderProgressBack, 0.42, {BackgroundTransparency = 0.35}, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 
-                -- Longer loader hold. Default is 8.5s, customizable with UI:Start({LoadingDuration = number}).
-                local holdTime = tonumber(Configuration.LoadingDuration) or 8.5
-                local halfHold = math.max(0.35, holdTime * 0.55)
-                task.wait(halfHold)
-                if morphSubtitle and morphSubtitle.Parent then
-                    morphSubtitle.Text = 'loading <font color="rgb(120,94,190)">interface</font>...'
+                local hold = math.max(2, tonumber(Configuration.LoadingDuration) or 10)
+                local startTime = tick()
+                while tick() - startTime < hold do
+                    local alpha = math.clamp((tick() - startTime) / hold, 0, 1)
+                    local eased = 1 - math.pow(1 - alpha, 2.2)
+                    loaderProgress.Size = UDim2.fromScale(math.clamp(eased * 0.94, 0, 0.94), 1)
+                    if alpha > 0.58 then
+                        loaderSubtitle.Text = 'loading <font color="rgb(125,95,210)">interface</font>...'
+                    end
+                    RunService.RenderStepped:Wait()
                 end
-                task.wait(math.max(0.35, holdTime - halfHold))
+                loaderProgress.Size = UDim2.fromScale(1, 1)
 
-                -- Make the loader become a dark card, then open the actual GUI underneath it.
-                morphCard.BackgroundTransparency = 0.08
-                morphStroke.Transparency = 0.42
-                morphTween(morphSubtitle, 0.28, {TextTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                morphTween(morphTitle, 0.36, {TextTransparency = 0.18}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                morphTween(morphScale, 0.65, {Scale = 1}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-                morphTween(morphCenter, 0.65, {Position = UDim2.fromScale(0.5, 0.135)}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-                morphTween(morphUnderline, 0.65, {
-                    Size = UDim2.fromOffset(112, 1),
-                    BackgroundTransparency = 0.22
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                -- Morph the loader title into the GUI header while the real GUI opens underneath.
+                forceShellLayout()
+                design.Visible = true
+                design.Position = interfacePosition + UDim2.new(0, 0, 0, 14)
+                designScale.Scale = 0.94
+                design.BackgroundTransparency = 0.18
 
-                task.wait(0.08)
-                task.spawn(function()
-                    setInterfaceVisible(true)
-                end)
+                makeMorphTween(design, 0.72, {Position = interfacePosition, BackgroundTransparency = 0}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                makeMorphTween(designScale, 0.72, {Scale = 1}, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                makeMorphTween(centerLoaderScale, 0.72, {Scale = 1}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                makeMorphTween(centerLoader, 0.72, {Position = UDim2.new(0.5, 0, 0, 23)}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                makeMorphTween(loaderSubtitle, 0.22, {TextTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                makeMorphTween(loaderProgressBack, 0.22, {BackgroundTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                makeMorphTween(loaderLine, 0.72, {Size = UDim2.fromOffset(112, 1), BackgroundTransparency = 0.35}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                task.wait(0.72)
 
-                local cardTween = morphTween(morphCard, 0.86, {
-                    Size = UDim2.new(0, 513, 0, 585),
-                    Position = design.Position,
-                    BackgroundTransparency = 0.92
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-                morphTween(morphStroke, 0.55, {Transparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                cardTween.Completed:Wait()
+                interfaceVisible = true
+                introFinished = true
+                introEvent:Fire()
+                forceShellLayout()
 
-                morphTween(morphTitle, 0.28, {TextTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                morphTween(morphUnderline, 0.28, {BackgroundTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-                local out = morphTween(morphOverlay, 0.58, {BackgroundTransparency = 1}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-                out.Completed:Wait()
+                makeMorphTween(loaderTitle, 0.25, {TextTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                makeMorphTween(loaderLine, 0.25, {BackgroundTransparency = 1}, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+                local fadeOut = makeMorphTween(morphOverlay, 0.45, {BackgroundTransparency = 1}, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+                fadeOut.Completed:Wait()
 
                 if morphOverlay and morphOverlay.Parent then
                     morphOverlay:Destroy()
                 end
-
-                introFinished = true
-                introEvent:Fire()
             end)
+
 
             local InterfaceTools = {}
             local isFirstPageAdded = true
@@ -2627,28 +2688,24 @@ function SectionTools:CreateSlider(Configuration_Slider)
                 visKey = new
             end
             function InterfaceTools.WaitForIntro()
-                if introFinished then
-                    return
+                if not introFinished then
+                    introEvent.Event:Wait()
                 end
-                introEvent.Event:Wait()
             end
             function InterfaceTools.Show()
-                if not introFinished then
-                    InterfaceTools.WaitForIntro()
+                if introFinished then
+                    setInterfaceVisible(true)
                 end
-                setInterfaceVisible(true)
             end
             function InterfaceTools.Hide()
-                if not introFinished then
-                    return
+                if introFinished then
+                    setInterfaceVisible(false)
                 end
-                setInterfaceVisible(false)
             end
             function InterfaceTools.Toggle()
-                if not introFinished then
-                    return
+                if introFinished then
+                    setInterfaceVisible(not interfaceVisible)
                 end
-                setInterfaceVisible(not interfaceVisible)
             end
             function InterfaceTools.Destroy()
                 if private and private.Parent then
@@ -2899,5 +2956,5 @@ function SectionTools:CreateSlider(Configuration_Slider)
         return NotificationLibrary
     end
 end
-bungiesLibrary.__version = "hashui_full_v12_bigger_buttons_smooth_toggle"
+bungiesLibrary.__version = "hashui_fixed_loader_morph_v13"
 return bungiesLibrary
